@@ -1,0 +1,33 @@
+# --- large downloaded weights (fetch via scripts/download_models.py) ---
+/models/*
+!/models/README.md
+
+# --- runtime data: uploads, processed outputs, logs, generated media ---
+/app/data/*
+!/app/data/.gitkeep
+app/settings.json
+
+# --- personal / sample media & screenshots (not for the repo) ---
+*.mp4
+*.mkv
+*.webm
+*.wav
+*.mp3
+WhatsApp*.jpeg
+WhatsApp*.jpg
+
+# --- python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# --- misc / logs / OS ---
+*.log
+hf-cache/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,23 @@
+# AwazSetu — Python dependencies (CPU-only, offline at runtime)
+# Tested on Python 3.10 / Windows 11. Install torch CPU wheels first on low-RAM/no-GPU boxes:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+flask>=3.0
+faster-whisper>=1.0
+ctranslate2>=4.0
+transformers>=4.44,<4.46
+torch>=2.2
+sentencepiece>=0.2
+soundfile>=0.12
+numpy>=1.24
+rank-bm25>=0.2
+huggingface-hub>=0.24
+accelerate>=0.30
+
+# Optional — higher-quality Indic translation (gated model, needs `huggingface-cli login`)
+# IndicTransToolkit>=1.0
+
+# Optional — only to regenerate the pitch deck (not needed to run the app)
+# python-pptx>=1.0
+
+# External (not pip): FFmpeg on PATH, and Ollama (https://ollama.com) for the chat LLM.

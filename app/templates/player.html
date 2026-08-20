@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AwazSetu — {{ m.video }}</title>
+<style>
+  :root { --red:#c0272d; --ink:#1a1a1a; --mut:#6b6b6b; --line:#e7e7e7; --bg:#f6f6f4; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; color:var(--ink); background:var(--bg); }
+  header { display:flex; align-items:center; gap:12px; padding:12px 20px; background:#fff; border-bottom:1px solid var(--line); }
+  header .logo { width:18px; height:18px; background:var(--red); border-radius:3px; }
+  header b { font-size:18px; letter-spacing:.3px; }
+  header .tag { font-size:12px; color:var(--mut); }
+  header .badges { margin-left:auto; font-size:11px; color:var(--mut); }
+  header .badges span { border:1px solid var(--line); border-radius:999px; padding:3px 9px; margin-left:6px; }
+  .wrap { display:grid; grid-template-columns:1.4fr 1fr; gap:18px; padding:18px; max-width:1200px; margin:0 auto; }
+  @media (max-width:900px){ .wrap{ grid-template-columns:1fr; } }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px; }
+  video { width:100%; border-radius:8px; background:#000; }
+  .label { font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--mut); margin:14px 0 6px; }
+  .btns { display:flex; flex-wrap:wrap; gap:8px; }
+  .btn { border:1px solid var(--line); background:#fff; border-radius:8px; padding:8px 14px; cursor:pointer; font-size:14px; }
+  .btn.active { background:var(--red); color:#fff; border-color:var(--red); }
+  .btn:disabled { opacity:.4; cursor:not-allowed; }
+  .hint { font-size:12px; color:var(--mut); margin-top:8px; }
+  /* chat */
+  .chat { display:flex; flex-direction:column; height:520px; }
+  .msgs { flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:4px; }
+  .msg { padding:9px 12px; border-radius:10px; max-width:90%; font-size:14px; line-height:1.4; }
+  .msg.u { align-self:flex-end; background:#efe7e7; }
+  .msg.a { align-self:flex-start; background:#f2f3f5; }
+  .src { display:inline-block; font-size:11px; color:var(--red); border:1px solid #eccfd0; border-radius:999px; padding:2px 8px; margin:4px 4px 0 0; cursor:pointer; }
+  .composer { display:flex; gap:8px; margin-top:10px; }
+  .composer input { flex:1; padding:10px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+  .composer button { background:var(--red); color:#fff; border:0; border-radius:8px; padding:0 16px; cursor:pointer; }
+  #mic.rec { background:#7a0f13; animation:pulse 1s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
+  .alangs { display:flex; gap:6px; margin-bottom:8px; align-items:center; }
+  .alangs small { color:var(--mut); }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"></div>
+  <b>AwazSetu</b><span class="tag">· {{ m.video }}</span>
+  <div class="badges"><span>100% offline</span><span>MT: {{ m.mt_engine }}</span>
+    <span style="cursor:pointer" onclick="reprocess()">↻ Re-process</span>
+    <a href="/settings" style="color:inherit;text-decoration:none">⚙ Settings</a>
+    <a href="/" style="color:inherit;text-decoration:none">Home</a></div>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: video + language switch -->
+  <div class="card">
+    <video id="v" controls crossorigin="anonymous" preload="metadata">
+      <source src="/media/{{ m.id }}/video" type="video/mp4">
+      {% for t in tracks %}
+      <track kind="subtitles" src="/media/{{ m.id }}/{{ t.file }}" srclang="{{ t.lang }}" label="{{ t.name }}">
+      {% endfor %}
+    </video>
+
+    <div class="label">Subtitles — switch anytime</div>
+    <div class="btns" id="subbtns">
+      {% for t in tracks %}
+      <button class="btn" data-lang="{{ t.lang }}" onclick="showSub('{{ t.lang }}')">{{ t.name }}</button>
+      {% endfor %}
+      <button class="btn" data-lang="off" onclick="showSub('off')">Off</button>
+    </div>
+
+    <div class="label">Voiceover (dub) — hear it in another language</div>
+    <div class="btns" id="dubbtns">
+      <button class="btn active" data-dub="off" onclick="playDub('off')">Original</button>
+      {% for t in tracks %}
+      <button class="btn" data-dub="{{ t.lang }}" onclick="playDub('{{ t.lang }}')">{{ t.name }}</button>
+      {% endfor %}
+    </div>
+    <div class="hint" id="dubhint">First time for a language takes ~30–60s to synthesize, then it's instant.</div>
+    <audio id="dub" preload="none"></audio>
+
+    <div class="label">Download</div>
+    <div class="btns">
+      {% for t in tracks %}<a class="btn" style="text-decoration:none;color:#1a1a1a" href="/export/{{ m.id }}/srt/{{ t.lang }}">{{ t.name }} .srt</a>{% endfor %}
+      <a class="btn" style="text-decoration:none;color:#1a1a1a" href="/export/{{ m.id }}/transcript">Transcript</a>
+      <a class="btn" style="text-decoration:none;color:#1a1a1a" href="/export/{{ m.id }}/mkv">Bundle&nbsp;.mkv</a>
+    </div>
+  </div>
+
+  <!-- RIGHT: chat with the video -->
+  <div class="card chat">
+    <div class="label" style="margin-top:0">💬 Ask this video</div>
+    <div class="alangs"><small>Answer in:</small>
+      <button class="btn active" data-alang="hi" onclick="setAlang('hi')" style="padding:4px 10px">हिंदी</button>
+      <button class="btn" data-alang="mr" onclick="setAlang('mr')" style="padding:4px 10px">मराठी</button>
+      <button class="btn" data-alang="en" onclick="setAlang('en')" style="padding:4px 10px">English</button>
+    </div>
+    <div class="msgs" id="msgs">
+      <div class="msg a">Ask me anything about this video — I answer only from what's said in it, offline.</div>
+    </div>
+    <div id="vstate" style="display:none;font-size:13px;color:var(--mut);margin:2px 0 6px"></div>
+    <div class="composer">
+      <button id="mic" onclick="toggleMic()" title="Tap to speak" style="padding:0 14px">🎙️</button>
+      <input id="q" placeholder="Type, or tap 🎙️ to speak…" onkeydown="if(event.key==='Enter')send()">
+      <button onclick="send()">Ask</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const VID = "{{ m.id }}";
+const SRC_LANG = "{{ m.src_lang }}";
+const AUTO_SPEAK = {{ 'true' if auto_speak else 'false' }};
+async function reprocess(){
+  if(!confirm('Re-process this video with the current Settings? (re-runs transcription + translation)')) return;
+  await fetch('/reprocess/'+VID,{method:'POST'});
+  alert('Re-processing started — refresh in a minute or watch the Home page.');
+}
+let alang = "{{ m.src_lang }}";
+let history = [];
+const video = document.getElementById('v');
+
+function showSub(lang){
+  const tt = video.textTracks;
+  for (let i=0;i<tt.length;i++) tt[i].mode = (tt[i].language===lang) ? 'showing' : 'hidden';
+  document.querySelectorAll('#subbtns .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.lang===lang));
+}
+function setAlang(l){
+  alang = l;
+  document.querySelectorAll('.alangs .btn').forEach(b =>
+    b.classList.toggle('active', b.dataset.alang===l));
+}
+function addMsg(cls, html){
+  const d = document.createElement('div'); d.className='msg '+cls; d.innerHTML=html;
+  const m=document.getElementById('msgs'); m.appendChild(d); m.scrollTop=m.scrollHeight; return d;
+}
+async function send(){
+  const inp=document.getElementById('q'); const q=inp.value.trim(); if(!q) return;
+  inp.value=''; addMsg('u', q);
+  const wait = addMsg('a', '…thinking (local LLM)…');
+  try{
+    const r = await fetch('/chat/'+VID, {method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({q, lang: alang, history})});
+    const j = await r.json();
+    let html = (j.answer||'(no answer)');
+    if (j.sources && j.sources.length){
+      html += '<div>'+ j.sources.map(s =>
+        `<span class="src" onclick="video.currentTime=${s.start};video.play()">▶ ${fmt(s.start)}</span>`).join('') +'</div>';
+    }
+    wait.innerHTML = html;
+    history.push({q, a: j.answer || ''}); if (history.length > 6) history.shift();
+    document.getElementById('msgs').scrollTop = 1e9;
+  }catch(e){ wait.innerHTML = '[error: '+e+']'; }
+}
+function fmt(s){ s=Math.floor(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+
+// ---- voice chat: tap-to-talk -> STT -> chat -> spoken answer (all offline) ----
+let mediaRec=null, chunks=[], recording=false;
+const micBtn=document.getElementById('mic'), vstate=document.getElementById('vstate');
+const ansAudio=new Audio();
+function setVState(t){ vstate.style.display=t?'block':'none'; vstate.textContent=t||''; }
+async function toggleMic(){
+  if(recording){ mediaRec && mediaRec.stop(); return; }
+  let stream;
+  try{ stream=await navigator.mediaDevices.getUserMedia({audio:true}); }
+  catch(e){ setVState('🎙️ Microphone blocked — allow mic access to talk.'); return; }
+  chunks=[]; mediaRec=new MediaRecorder(stream);
+  mediaRec.ondataavailable=e=>{ if(e.data.size) chunks.push(e.data); };
+  mediaRec.onstop=async()=>{
+    recording=false; micBtn.classList.remove('rec'); stream.getTracks().forEach(t=>t.stop());
+    const blob=new Blob(chunks,{type:'audio/webm'});
+    setVState('🧠 Thinking… (transcribing + answering, offline)');
+    const fd=new FormData();
+    fd.append('audio',blob,'clip.webm'); fd.append('lang',alang);
+    fd.append('history',JSON.stringify(history));
+    try{
+      const j=await (await fetch('/voice_chat/'+VID,{method:'POST',body:fd})).json();
+      if(j.error){ setVState('Voice error: '+j.error); return; }
+      if(j.question) addMsg('u','🎙️ '+j.question);
+      let html=j.answer||'(no answer)';
+      if(j.sources&&j.sources.length){ html+='<div>'+j.sources.map(s=>
+        `<span class="src" onclick="video.currentTime=${s.start};video.play()">▶ ${fmt(s.start)}</span>`).join('')+'</div>'; }
+      addMsg('a',html);
+      if(j.question) history.push({q:j.question,a:j.answer||''}); if(history.length>6) history.shift();
+      if(j.audio && AUTO_SPEAK){ setVState('🔊 Speaking…'); ansAudio.src=j.audio; ansAudio.play();
+        ansAudio.onended=()=>setVState(''); }
+      else { if(j.audio){ ansAudio.src=j.audio; } setVState(''); }
+    }catch(e){ setVState('Voice error: '+e); }
+  };
+  mediaRec.start(); recording=true; micBtn.classList.add('rec');
+  setVState('🎙️ Listening… tap the mic again to stop.');
+}
+
+// ---- dub: generate on demand, then play in sync with the video ----
+const dubAudio = document.getElementById('dub');
+let dubLang = 'off';
+async function playDub(lang){
+  document.querySelectorAll('#dubbtns .btn').forEach(b => b.classList.toggle('active', b.dataset.dub===lang));
+  const hint = document.getElementById('dubhint');
+  if (lang==='off'){ dubLang='off'; dubAudio.pause(); video.muted=false; hint.textContent='Original audio.'; return; }
+  hint.textContent = 'Generating '+lang+' voiceover… (first time, ~30–60s)';
+  try{
+    const r = await fetch('/dub/'+VID+'/'+lang);
+    const j = await r.json();
+    if (j.error){ hint.textContent = 'dub error: '+j.error; return; }
+    dubLang = lang; dubAudio.src = j.url; video.muted = true;
+    dubAudio.currentTime = video.currentTime;
+    if (!video.paused) dubAudio.play();
+    hint.textContent = 'Playing '+lang+' voiceover — original muted. Click Original to revert.';
+  }catch(e){ hint.textContent = 'dub error: '+e; }
+}
+video.addEventListener('play',  ()=>{ if(dubLang!=='off'){ dubAudio.currentTime=video.currentTime; dubAudio.play(); }});
+video.addEventListener('pause', ()=>{ if(dubLang!=='off') dubAudio.pause(); });
+video.addEventListener('seeked',()=>{ if(dubLang!=='off') dubAudio.currentTime=video.currentTime; });
+video.addEventListener('ratechange',()=>{ dubAudio.playbackRate=video.playbackRate; });
+// correct any drift between the two elements a few times a second
+setInterval(()=>{ if(dubLang!=='off' && !video.paused &&
+  Math.abs(dubAudio.currentTime-video.currentTime)>0.35) dubAudio.currentTime=video.currentTime; }, 1500);
+
+// show source-language subtitles by default; honour a ?t=<seconds> deep link
+window.addEventListener('load', ()=> setTimeout(()=>{
+  showSub(SRC_LANG);
+  const t = new URLSearchParams(location.search).get('t');
+  if (t) { video.currentTime = parseFloat(t) || 0; }
+}, 300));
+</script>
+</body>
+</html>

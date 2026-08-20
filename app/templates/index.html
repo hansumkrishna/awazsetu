@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AwazSetu</title>
+<style>
+  :root { --red:#c0272d; --ink:#1a1a1a; --mut:#6b6b6b; --line:#e7e7e7; --bg:#f6f6f4; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; align-items:center; gap:12px; padding:14px 22px; background:#fff; border-bottom:1px solid var(--line); }
+  .logo { width:18px; height:18px; background:var(--red); border-radius:3px; }
+  b { font-size:19px; } .tag { color:var(--mut); font-size:13px; }
+  .wrap { max-width:860px; margin:24px auto; padding:0 18px; }
+  h3 { margin:22px 0 10px; font-size:15px; text-transform:uppercase; letter-spacing:.5px; color:var(--mut); }
+  #drop { border:2px dashed #d7c3c4; border-radius:14px; padding:34px; text-align:center; background:#fff; cursor:pointer; transition:.15s; }
+  #drop.hot { border-color:var(--red); background:#fff5f5; }
+  #drop .big { font-size:16px; } #drop .sub { color:var(--mut); font-size:13px; margin-top:6px; }
+  .bar { height:10px; background:#eee; border-radius:99px; overflow:hidden; margin-top:14px; display:none; }
+  .bar > div { height:100%; width:0; background:var(--red); transition:width .4s; }
+  #pstage { font-size:13px; color:var(--mut); margin-top:8px; display:none; }
+  .srch { display:flex; gap:8px; margin-top:6px; }
+  .srch input { flex:1; padding:11px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
+  a.card { display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--line);
+           border-radius:12px; padding:14px 16px; margin-bottom:10px; }
+  a.card:hover { border-color:var(--red); }
+  .langs span { font-size:12px; border:1px solid var(--line); border-radius:999px; padding:2px 9px; margin-right:6px; color:#444; }
+  .snip { color:var(--mut); font-size:13px; margin-top:6px; }
+  .empty { color:var(--mut); }
+</style>
+</head>
+<body>
+<header><div class="logo"></div><b>AwazSetu</b><span class="tag">· offline video translate · dub · chat</span>
+  <span style="margin-left:auto"><a href="/settings" style="color:#b01c24;text-decoration:none;font-size:14px">⚙ Settings</a></span></header>
+<div class="wrap">
+
+  <h3>Add a video</h3>
+  <div id="drop">
+    <div class="big">📤 Drop a video here, or click to choose</div>
+    <div class="sub">Hindi / Marathi / English · processed fully offline on this machine</div>
+    <input id="file" type="file" accept="video/*" style="display:none">
+  </div>
+  <div class="bar" id="bar"><div id="barfill"></div></div>
+  <div id="pstage"></div>
+
+  <h3>Search across your library</h3>
+  <div class="srch">
+    <input id="q" placeholder="Find a moment across all processed videos…" oninput="debounced()">
+  </div>
+  <div id="results"></div>
+
+  <h3>Processed videos</h3>
+  <div id="list">
+  {% for v in videos %}
+    <a class="card" href="/watch/{{ v.id }}">
+      <div>{{ v.video }}</div>
+      <div class="langs" style="margin-top:8px">{% for L in v.langs %}<span>{{ lang_names.get(L, L) }}</span>{% endfor %}</div>
+    </a>
+  {% else %}
+    <p class="empty">No processed videos yet — add one above.</p>
+  {% endfor %}
+  </div>
+</div>
+
+<script>
+const drop = document.getElementById('drop'), file = document.getElementById('file');
+const bar = document.getElementById('bar'), fill = document.getElementById('barfill'), pstage = document.getElementById('pstage');
+drop.onclick = () => file.click();
+['dragover','dragenter'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('hot'); }));
+['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('hot'); }));
+drop.addEventListener('drop', ev => { if (ev.dataTransfer.files[0]) upload(ev.dataTransfer.files[0]); });
+file.onchange = () => { if (file.files[0]) upload(file.files[0]); };
+
+async function upload(f){
+  const fd = new FormData(); fd.append('file', f);
+  bar.style.display = 'block'; pstage.style.display = 'block'; pstage.textContent = 'Uploading…'; fill.style.width = '4%';
+  const r = await fetch('/upload', { method:'POST', body: fd });
+  const j = await r.json();
+  if (j.error){ pstage.textContent = 'Error: ' + j.error; return; }
+  if (j.cached){ location.href = '/watch/' + j.id; return; }
+  poll(j.id);
+}
+function poll(id){
+  const iv = setInterval(async () => {
+    const s = await (await fetch('/status/' + id)).json();
+    fill.style.width = (s.pct || 0) + '%';
+    pstage.textContent = s.stage === 'done' ? 'Done — opening…' : (s.stage || 'processing') + '…';
+    if (s.stage === 'done'){ clearInterval(iv); location.href = '/watch/' + id; }
+  }, 1500);
+}
+
+let t;
+function debounced(){ clearTimeout(t); t = setTimeout(search, 300); }
+async function search(){
+  const q = document.getElementById('q').value.trim();
+  const box = document.getElementById('results');
+  if (!q){ box.innerHTML = ''; return; }
+  const j = await (await fetch('/search?q=' + encodeURIComponent(q))).json();
+  box.innerHTML = (j.hits || []).map(h =>
+    `<a class="card" href="/watch/${h.id}?t=${h.start}"><div>${h.video||h.id}</div>
+     <div class="snip">▶ ${Math.floor(h.start/60)}:${String(Math.floor(h.start%60)).padStart(2,'0')} — ${h.text}</div></a>`
+  ).join('') || '<p class="empty">No matches.</p>';
+}
+</script>
+</body>
+</html>
