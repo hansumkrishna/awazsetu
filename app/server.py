@@ -67,7 +67,12 @@ def chat(vid: str):
     try:
         from chat import answer  # lazy import so the LLM loads only in chat mode
     except Exception as e:
-        return jsonify({"answer": f"[chat engine not ready: {e}]", "sources": []})
+        import sys as _s
+        print(f"[chat] engine import failed: {e}", file=_s.stderr, flush=True)
+        from chat import STR_LLM_DOWN
+        lg = (request.get_json(silent=True) or {}).get("lang", "en")
+        return jsonify({"answer": STR_LLM_DOWN.get(lg, STR_LLM_DOWN["en"]),
+                        "sources": [], "grounded": False})
     data = request.get_json(force=True)
     q = (data.get("q") or "").strip()
     lang = data.get("lang", "hi")
@@ -165,7 +170,9 @@ def voice_chat(vid: str):
         for m_ in (os.environ.get("AWAZ_LLM", "qwen2.5:3b"),
                    os.environ.get("AWAZ_LLM_FALLBACK", "qwen2.5:1.5b")):
             try:
-                subprocess.run(["ollama", "stop", m_], timeout=15, capture_output=True)
+                import config as _c
+                subprocess.run([_c.ollama_exe(), "stop", m_], timeout=15,
+                               capture_output=True)
             except Exception:
                 pass
 
@@ -178,8 +185,11 @@ def voice_chat(vid: str):
     except Exception as e:
         return jsonify({"error": f"stt failed: {e}"}), 500
     if not q:
-        return jsonify({"question": "", "answer": "(couldn't hear anything — try again)",
-                        "sources": [], "audio": None})
+        NOHEAR = {"en": "I could not hear that clearly. Please try again.",
+                  "hi": "आवाज़ स्पष्ट नहीं सुनाई दी। कृपया दोबारा बोलें।",
+                  "mr": "आवाज स्पष्ट ऐकू आला नाही. कृपया पुन्हा बोला."}
+        return jsonify({"question": "", "answer": NOHEAR.get(lang, NOHEAR["en"]),
+                        "sources": [], "audio": None, "grounded": False})
 
     # 2) grounded answer (reuses the text chat pipeline: Q->En, RAG, LLM, ->lang)
     m = load_manifest(vid)

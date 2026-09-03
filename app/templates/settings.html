@@ -27,6 +27,14 @@
   .status .row{border-bottom:1px solid var(--line)} .status .k{font-size:13px;color:var(--mut)} .status .v{font-size:13px;font-weight:600}
   .badge{display:inline-block;font-size:11px;border-radius:999px;padding:2px 8px} .badge.ok{background:#e6f4ea;color:var(--ok)} .badge.no{background:#fbe7e7;color:var(--red)}
   .note{font-size:12px;color:var(--mut);margin-top:6px}
+
+table.guide{border-collapse:collapse;width:100%;font-size:12px}
+table.guide th,table.guide td{border-bottom:1px solid #e6e0d8;padding:5px 7px;text-align:left;vertical-align:top}
+table.guide th{font-weight:600;color:#6b6257;white-space:nowrap}
+table.guide td.n{white-space:nowrap;font-variant-numeric:tabular-nums}
+.rate{letter-spacing:1px}
+.r5{color:#1a7f37}.r4{color:#3d8f4f}.r3{color:#b8860b}.r2{color:#c2410c}.r1{color:#b01c24}
+.pick{font-size:12px;color:#6b6257;margin-top:4px;line-height:1.45}
 </style>
 </head>
 <body>
@@ -48,6 +56,12 @@
         <select id="chat_llm_fallback"></select></div>
     </div>
 
+
+    <div class="card"><h3>Which model for which language?</h3>
+      <div class="sub" style="margin-bottom:8px">Ratings out of 5 per language. Rows marked
+        <b>measured</b> were benchmarked on BAIF Marathi field video on this hardware.</div>
+      <div style="overflow-x:auto"><table id="guide" class="guide"></table></div>
+    </div>
     <div class="card"><h3>Languages</h3>
       <div class="row"><div><label>Target languages to generate</label><div class="sub">subtitles, dub &amp; answers</div></div>
         <div class="chips" id="langs"></div></div>
@@ -140,6 +154,38 @@ async function save(){
   await fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(patch)});
   const s=document.getElementById('saved'); s.textContent='✓ saved — applies to the next run'; setTimeout(()=>s.textContent='',3500);
 }
+
+// ---- model guidance table + live hints -------------------------------------
+const G = ST.guide || {};
+const LANGS3 = ['en','hi','mr'];
+const dots = n => `<span class="rate r${n}">${'●'.repeat(n)}${'○'.repeat(5-n)}</span>`;
+function guideRows(){
+  const sect = [['asr','Video transcription (ASR)'],['mt','Translation'],['llm','Chat LLM']];
+  let h = '<tr><th>Model</th><th>English</th><th>Hindi</th><th>Marathi</th><th>Speed</th><th>~RAM</th><th>Notes</th></tr>';
+  for (const [k,title] of sect){
+    if(!G[k]) continue;
+    h += `<tr><th colspan="7" style="padding-top:9px;color:#b01c24">${title}</th></tr>`;
+    for (const [name,d] of Object.entries(G[k])){
+      h += `<tr><td class="n"><b>${name}</b></td>` +
+           LANGS3.map(L=>`<td>${dots(d[L])}</td>`).join('') +
+           `<td>${dots(d.speed)}</td><td class="n">${d.ram_mb} MB</td><td>${d.note}</td></tr>`;
+    }
+  }
+  document.getElementById('guide').innerHTML = h;
+}
+guideRows();
+function hintFor(kind, id){
+  const el = document.getElementById(id); if(!el) return;
+  let box = el.parentElement.querySelector('.pick');
+  if(!box){ box=document.createElement('div'); box.className='pick'; el.parentElement.appendChild(box); }
+  const d = (G[kind]||{})[el.value];
+  box.innerHTML = d ? `Marathi ${dots(d.mr)} · Hindi ${dots(d.hi)} · English ${dots(d.en)} — ${d.note}`
+                    : 'No guidance for this model.';
+}
+function wireHint(kind,id){ const el=document.getElementById(id); if(!el) return;
+  el.addEventListener('change',()=>hintFor(kind,id)); hintFor(kind,id); }
+wireHint('asr','asr_model'); wireHint('asr','mic_model');
+wireHint('mt','translate_engine'); wireHint('llm','chat_llm'); wireHint('llm','chat_llm_fallback');
 </script>
 </body>
 </html>

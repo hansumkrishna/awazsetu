@@ -31,3 +31,14 @@ hf-cache/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# --- demo logistics notes & screenshots (contain meeting credentials) ---
+/notes/
+/screenshots/
+
+# --- offline installer kit (large binaries, not for git) ---
+/offline_kit/
+
+# --- supplied test media ---
+/Videos.zip
+/test_videos/

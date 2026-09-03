@@ -38,6 +38,9 @@
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.55} }
   .alangs { display:flex; gap:6px; margin-bottom:8px; align-items:center; }
   .alangs small { color:var(--mut); }
+.msg.a.ungrounded{border-left:3px solid #c98a00;background:#fff8e8}
+.msg.a.ungrounded::before{content:'⚠ not covered by this video';display:block;
+  font-size:11px;color:#8a6100;letter-spacing:.02em;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -143,14 +146,22 @@ async function send(){
       body: JSON.stringify({q, lang: alang, history})});
     const j = await r.json();
     let html = (j.answer||'(no answer)');
+    const ung = (j.grounded === false);
     if (j.sources && j.sources.length){
       html += '<div>'+ j.sources.map(s =>
         `<span class="src" onclick="video.currentTime=${s.start};video.play()">▶ ${fmt(s.start)}</span>`).join('') +'</div>';
     }
     wait.innerHTML = html;
+    if (ung) wait.classList.add('ungrounded');
     history.push({q, a: j.answer || ''}); if (history.length > 6) history.shift();
     document.getElementById('msgs').scrollTop = 1e9;
-  }catch(e){ wait.innerHTML = '[error: '+e+']'; }
+  }catch(e){
+    const M={en:'Could not reach the local assistant. Is the app still running?',
+             hi:'स्थानीय सहायक तक पहुँच नहीं सका। क्या ऐप चल रहा है?',
+             mr:'स्थानिक सहाय्यकाशी संपर्क होऊ शकला नाही. अॅप सुरू आहे का?'};
+    wait.innerHTML = M[alang]||M.en; wait.classList.add('ungrounded');
+    console.error('chat failed:', e);
+  }
 }
 function fmt(s){ s=Math.floor(s); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
 
@@ -178,9 +189,10 @@ async function toggleMic(){
       if(j.error){ setVState('Voice error: '+j.error); return; }
       if(j.question) addMsg('u','🎙️ '+j.question);
       let html=j.answer||'(no answer)';
+      const ung=(j.grounded===false);
       if(j.sources&&j.sources.length){ html+='<div>'+j.sources.map(s=>
         `<span class="src" onclick="video.currentTime=${s.start};video.play()">▶ ${fmt(s.start)}</span>`).join('')+'</div>'; }
-      addMsg('a',html);
+      const am=addMsg('a',html); if(ung) am.classList.add('ungrounded');
       if(j.question) history.push({q:j.question,a:j.answer||''}); if(history.length>6) history.shift();
       if(j.audio && AUTO_SPEAK){ setVState('🔊 Speaking…'); ansAudio.src=j.audio; ansAudio.play();
         ansAudio.onended=()=>setVState(''); }

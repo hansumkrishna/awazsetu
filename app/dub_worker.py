@@ -20,6 +20,81 @@ MMS = {"hi": "facebook/mms-tts-hin", "mr": "facebook/mms-tts-mar",
        "en": "facebook/mms-tts-eng"}
 
 
+import re as _re
+
+# VITS degrades (and can blow up) on long inputs. Field transcript segments are often
+# a full sentence or three, so synthesise sentence-by-sentence and concatenate.
+_SENT_END = _re.compile(r"(?<=[\u0964\u0965.!?])\s+")   # danda, double danda, ASCII
+
+
+def split_for_tts(text: str, max_chars: int = 180) -> list[str]:
+    text = (text or "").strip()
+    if not text:
+        return []
+    parts, buf = [], ""
+    for sent in _SENT_END.split(text):
+        sent = sent.strip()
+        if not sent:
+            continue
+        if len(sent) > max_chars:                 # still too long: split on commas
+            for piece in _re.split(r"(?<=[,;\u003b])\s+", sent):
+                piece = piece.strip()
+                while len(piece) > max_chars:     # last resort: hard wrap on a space
+                    cut = piece.rfind(" ", 0, max_chars)
+                    cut = cut if cut > 40 else max_chars
+                    parts.append(piece[:cut].strip())
+                    piece = piece[cut:].strip()
+                if piece:
+                    parts.append(piece)
+            continue
+        if len(buf) + len(sent) + 1 <= max_chars:
+            buf = (buf + " " + sent).strip()
+        else:
+            if buf:
+                parts.append(buf)
+            buf = sent
+    if buf:
+        parts.append(buf)
+    return parts
+
+
+def synth_text(model, tok, text, np, torch):
+    """Synthesise possibly-long text as concatenated chunks. Returns float32 mono."""
+    chunks = split_for_tts(text)
+    if not chunks:
+        return np.zeros(0, dtype=np.float32)
+    outs = []
+    for c in chunks:
+        try:
+            with torch.no_grad():
+                w = model(**tok(c, return_tensors="pt")).waveform.squeeze().cpu().numpy()
+            outs.append(w.astype(np.float32))
+        except Exception:
+            continue
+    if not outs:
+        return np.zeros(0, dtype=np.float32)
+    return np.concatenate(outs) if len(outs) > 1 else outs[0]
+
+
+
+def _load_tts(repo):
+    """Load an MMS-TTS voice, working around the Marathi tokenizer config.
+
+    facebook/mms-tts-mar ships `phonemize=True`, which makes the tokenizer demand the
+    `phonemizer` package (and an espeak-ng system binary). Its vocabulary is in fact
+    60 Devanagari tokens — the model consumes Devanagari directly, exactly like
+    mms-tts-hin (phonemize=False). Forcing the flag off makes Marathi speech work with
+    NO extra system dependency, which is what keeps the install fully offline.
+    """
+    from transformers import VitsModel, AutoTokenizer
+    tok = AutoTokenizer.from_pretrained(repo)
+    if getattr(tok, "phonemize", False):
+        try:
+            import phonemizer  # noqa: F401  (use the real phonemiser when present)
+        except Exception:
+            tok.phonemize = False
+    return VitsModel.from_pretrained(repo), tok
+
 def _resample(wav: np.ndarray, new_len: int) -> np.ndarray:
     """Linear-interp resample to new_len samples (mild pitch change on compression)."""
     if new_len <= 0 or new_len == len(wav) or len(wav) < 2:
@@ -34,8 +109,8 @@ def main():
     m = json.load(open(manifest_path, encoding="utf-8"))
     segs = sorted(m["segments"], key=lambda s: s["start"])
 
-    model = VitsModel.from_pretrained(MMS[lang])
-    tok = AutoTokenizer.from_pretrained(MMS[lang])
+    repo = MMS.get(lang, MMS["en"])
+    model, tok = _load_tts(repo)
     sr = model.config.sampling_rate
 
     total = float(m.get("duration") or segs[-1]["end"]) + 1.0
@@ -47,9 +122,9 @@ def main():
         if not text:
             continue
         try:
-            inputs = tok(text, return_tensors="pt")
-            with torch.no_grad():
-                wav = model(**inputs).waveform.squeeze().cpu().numpy().astype(np.float32)
+            wav = synth_text(model, tok, text, np, torch)
+            if wav.size == 0:
+                continue
         except Exception as e:
             print("skip seg:", repr(e), file=sys.stderr)
             continue

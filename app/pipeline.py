@@ -14,7 +14,8 @@ import json
 import time
 import hashlib
 
-from asr import extract_audio, WhisperASR
+from asr import (extract_audio, WhisperASR, transcript_confidence,
+                 sanitize_segments)
 from mt import get_mt
 from subs import write_vtt
 
@@ -27,8 +28,14 @@ def video_id(path: str) -> str:
     return h.hexdigest()[:16]
 
 
-def process_video(video_path: str, work_root: str, src_lang: str = "hi",
-                  targets=("mr", "en"), asr=None, mt=None, log=print) -> dict:
+def process_video(video_path: str, work_root: str, src_lang: str | None = None,
+                  targets=("hi", "mr", "en"), asr=None, mt=None, log=print) -> dict:
+    """Process one video end to end.
+
+    `src_lang=None` AUTO-DETECTS the spoken language. Never assume: decoding
+    Marathi audio with language="hi" yields fluent-looking Devanagari nonsense,
+    which then propagates into the subtitles, the dub and the chat answers.
+    """
     vid = video_id(video_path)
     work = os.path.join(work_root, vid)
     os.makedirs(work, exist_ok=True)
@@ -48,20 +55,42 @@ def process_video(video_path: str, work_root: str, src_lang: str = "hi",
         with open(raw, encoding="utf-8") as f:
             cached = json.load(f)
         segs, detected = cached["segments"], cached["lang"]
-        log(f"[2/4] transcript cached ({len(segs)} segs, lang={detected}) — skip ASR")
+        conf = cached.get("confidence") or transcript_confidence(segs)
+        src_lang = src_lang or detected
+        log(f"[2/4] transcript cached ({len(segs)} segs, lang={detected}) - skip ASR")
     else:
         own_asr = asr is None
         asr = asr or WhisperASR()
-        log(f"[2/4] transcribe (whisper {asr.size} / {asr.device}) ...")
+        if src_lang in (None, "", "auto"):
+            det, prob = asr.detect_language(wav)
+            log(f"      language auto-detected: {det} (p={prob:.2f})")
+            src_lang = det
+        log(f"[2/4] transcribe (whisper {asr.size} / {asr.device}, lang={src_lang}) ...")
         t0 = time.time()
         segs, detected = asr.transcribe(wav, language=src_lang)
-        log(f"      {len(segs)} segments, lang={detected}, {time.time() - t0:.1f}s")
+        conf = transcript_confidence(segs)
+        log(f"      {len(segs)} segments, lang={detected}, {time.time() - t0:.1f}s, "
+            f"mean_logprob={conf['mean_logprob']} low_conf={conf['low_conf_ratio']:.0%} "
+            f"usable={conf['usable']}")
+        if not conf["usable"]:
+            log("      WARNING: ASR confidence is low — transcript may be unreliable. "
+                "Consider a larger model (Settings -> ASR model).")
         with open(raw, "w", encoding="utf-8") as f:
-            json.dump({"lang": detected, "segments": segs}, f, ensure_ascii=False)
+            json.dump({"lang": detected, "segments": segs, "confidence": conf},
+                      f, ensure_ascii=False)
         if own_asr:  # STAGED LOADING: free ASR before MT so peak RAM stays flat
             del asr
             gc.collect()
             asr = None
+    # Drop ASR garbage BEFORE translating. Whisper can emit a degenerate loop
+    # (e.g. "ব" x60) that scores high confidence; NLLB then invents fluent English
+    # from it ("I have not seen any of you..."), which reaches the user as fact.
+    segs, dropped = sanitize_segments(segs, src_lang)
+    if dropped:
+        log(f"      sanitiser dropped {len(dropped)} garbage segment(s): "
+            + ", ".join(sorted({d['reason'] for d in dropped})))
+    conf = transcript_confidence(segs)
+
     try:  # domain glossary: fix common source-language ASR mishears before translating
         from glossary import correct_source
         for s in segs:
@@ -72,7 +101,7 @@ def process_video(video_path: str, work_root: str, src_lang: str = "hi",
         s["t"] = {src_lang: s["text"]}
 
     mt = mt or get_mt()
-    tgts = [t for t in targets if t != src_lang]
+    tgts = [t for t in targets if t != src_lang]  # src is now known/detected
     src_texts = [s["text"] for s in segs]
     log(f"[3/4] translate {src_lang}->{tgts} ({mt.NAME}) ...")
     t0 = time.time()
@@ -80,9 +109,13 @@ def process_video(video_path: str, work_root: str, src_lang: str = "hi",
         res = mt.translate_multi(src_texts, src_lang, tgts)
     else:
         res = {tgt: mt.translate(src_texts, src=src_lang, tgt=tgt) for tgt in tgts}
+    try:
+        from glossary import correct_target
+    except Exception:
+        correct_target = lambda t, L: t
     for tgt in tgts:
         for s, tr in zip(segs, res.get(tgt, [])):
-            s["t"][tgt] = tr
+            s["t"][tgt] = correct_target(tr, tgt)
     log(f"      {time.time() - t0:.1f}s")
 
     all_langs = [src_lang] + tgts
@@ -92,11 +125,26 @@ def process_video(video_path: str, work_root: str, src_lang: str = "hi",
         write_vtt(segs, p, L)
         vtts[L] = os.path.basename(p)
 
+    # Re-processing runs against the cached work/<id>/video.mp4, so os.path.basename
+    # would rewrite every title to "video.mp4". Keep the name the library already knows.
+    prev_name = None
+    _mp = os.path.join(work, "manifest.json")
+    if os.path.exists(_mp):
+        try:
+            with open(_mp, encoding="utf-8") as _f:
+                prev_name = json.load(_f).get("video")
+        except Exception:
+            prev_name = None
+    disp = os.path.basename(video_path)
+    if disp == "video.mp4" and prev_name:
+        disp = prev_name
     manifest = {
-        "id": vid, "video": os.path.basename(video_path),
+        "id": vid, "video": disp,
         "src_lang": src_lang, "langs": all_langs,
         "duration": segs[-1]["end"] if segs else 0.0,
         "mt_engine": mt.NAME, "vtts": vtts, "segments": segs,
+        "asr_confidence": conf,
+        "asr_model": os.environ.get("AWAZ_WHISPER", "small"),
     }
     with open(os.path.join(work, "manifest.json"), "w", encoding="utf-8") as f:
         json.dump(manifest, f, ensure_ascii=False, indent=1)

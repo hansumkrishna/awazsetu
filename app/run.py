@@ -87,7 +87,12 @@ if len(sys.argv) > 1:
                 _status(st, pct)
 
     _status("Queued", 2)
-    m = process_video(vp, work_root, log=log)
+    try:
+        import config as _cfg
+        _targets = tuple(_cfg.load().get("langs") or ("hi", "mr", "en"))
+    except Exception:
+        _targets = ("hi", "mr", "en")
+    m = process_video(vp, work_root, targets=_targets, log=log)
     _status("done", 100)
     print("done:", m["id"], "langs:", m["langs"], "engine:", m["mt_engine"])
 else:

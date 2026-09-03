@@ -105,3 +105,37 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# --- added after benchmarking on real BAIF Marathi video -----------------------
+# medium is the recommended ASR model (small garbles Marathi); large-v3 is optional
+# and needs either a >4GB GPU or patience on CPU.
+EXTRA_WHISPER = ["medium", "large-v3"]
+
+# IndicTrans2 (optional, higher Indic quality). All three repos are GATED: run
+# `huggingface-cli login` AND click "Agree" on each model page first.
+INDICTRANS2 = [
+    "ai4bharat/indictrans2-indic-en-dist-200M",
+    "ai4bharat/indictrans2-en-indic-dist-200M",
+    "ai4bharat/indictrans2-indic-indic-dist-320M",
+]
+
+
+def fetch_extras(with_indictrans2: bool = False):
+    """Pull the models the benchmark selected. Windows without Developer Mode cannot
+    create symlinks, so disable them or the download aborts part-way."""
+    import os
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS", "1")
+    os.environ.setdefault("HF_HUB_DISABLE_SYMLINKS_WARNING", "1")
+    from huggingface_hub import snapshot_download
+    for size in EXTRA_WHISPER:
+        print("==> faster-whisper", size, flush=True)
+        snapshot_download(f"Systran/faster-whisper-{size}", max_workers=4)
+    if with_indictrans2:
+        for repo in INDICTRANS2:
+            try:
+                print("==>", repo, flush=True)
+                snapshot_download(repo, token=os.environ.get("HF_TOKEN"), max_workers=2)
+            except Exception as e:
+                print(f"    SKIPPED ({type(e).__name__}) - accept the licence at "
+                      f"https://huggingface.co/{repo}", flush=True)
