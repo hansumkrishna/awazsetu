@@ -23,8 +23,8 @@ Click the video. Under the player, choose **हिंदी / मराठी / 
 The subtitles change instantly — the video does not reload.
 
 **3. Hear it in another language (dub)**
-Choose a language under **"Hear it in another language"**. The first time takes a
-minute while the voice is generated; after that it is instant. Press **Off** to
+Choose a language under **"Hear it in another language"**. It plays immediately — every
+voiceover is built when the video is saved, not while you are watching. Press **Off** to
 return to the original audio.
 
 **4. Ask the video a question (typing)**
@@ -40,8 +40,10 @@ language. This is designed for users who cannot read or type.
 ### What to expect
 - **Answers come only from the video.** Ask about something else and it will say
   "this video does not cover that" and show the closest lines. That is correct behaviour.
-- **Speed.** Processing a 6-minute video takes a few minutes the first time. Watching,
-  subtitles and chat are instant afterwards.
+- **Speed.** Saving a video takes a while the first time — it transcribes, translates,
+  builds all the subtitles and records every voiceover, showing each step on a progress
+  bar. After that, watching, switching language and playing a voiceover are all instant.
+  Only the assistant's answers are worked out live.
 - **Accuracy.** Clear studio narration transcribes well. Noisy field audio, heavy
   dialect or several people talking at once will produce mistakes — check the
   subtitles before relying on a fact.

@@ -19,6 +19,12 @@
   .bar { height:10px; background:#eee; border-radius:99px; overflow:hidden; margin-top:14px; display:none; }
   .bar > div { height:100%; width:0; background:var(--red); transition:width .4s; }
   #pstage { font-size:13px; color:var(--mut); margin-top:8px; display:none; }
+  #psteps { margin-top:10px; display:none; font-size:12.5px; }
+  #psteps .st { display:flex; align-items:center; gap:8px; padding:3px 0; color:var(--mut); }
+  #psteps .st .ic { width:15px; text-align:center; font-size:12px; }
+  #psteps .st.done { color:#1a7f37; }
+  #psteps .st.running { color:var(--red); font-weight:600; }
+  #psteps .st.failed { color:#b01c24; }
   .srch { display:flex; gap:8px; margin-top:6px; }
   .srch input { flex:1; padding:11px; border:1px solid var(--line); border-radius:8px; font-size:14px; }
   a.card { display:block; text-decoration:none; color:inherit; background:#fff; border:1px solid var(--line);
@@ -42,6 +48,7 @@
   </div>
   <div class="bar" id="bar"><div id="barfill"></div></div>
   <div id="pstage"></div>
+  <div id="psteps"></div>
 
   <h3>Search across your library</h3>
   <div class="srch">
@@ -65,6 +72,7 @@
 <script>
 const drop = document.getElementById('drop'), file = document.getElementById('file');
 const bar = document.getElementById('bar'), fill = document.getElementById('barfill'), pstage = document.getElementById('pstage');
+const psteps = document.getElementById('psteps');
 drop.onclick = () => file.click();
 ['dragover','dragenter'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.add('hot'); }));
 ['dragleave','drop'].forEach(e => drop.addEventListener(e, ev => { ev.preventDefault(); drop.classList.remove('hot'); }));
@@ -73,7 +81,8 @@ file.onchange = () => { if (file.files[0]) upload(file.files[0]); };
 
 async function upload(f){
   const fd = new FormData(); fd.append('file', f);
-  bar.style.display = 'block'; pstage.style.display = 'block'; pstage.textContent = 'Uploading…'; fill.style.width = '4%';
+  bar.style.display = 'block'; pstage.style.display = 'block'; psteps.style.display = 'block';
+  pstage.textContent = 'Uploading…'; fill.style.width = '4%';
   const r = await fetch('/upload', { method:'POST', body: fd });
   const j = await r.json();
   if (j.error){ pstage.textContent = 'Error: ' + j.error; return; }
@@ -85,6 +94,15 @@ function poll(id){
     const s = await (await fetch('/status/' + id)).json();
     fill.style.width = (s.pct || 0) + '%';
     pstage.textContent = s.stage === 'done' ? 'Done — opening…' : (s.stage || 'processing') + '…';
+    // Per-step list: subtitles AND voiceovers are all built now, so nothing has to be
+    // synthesised later while someone is watching.
+    if (s.steps && s.steps.length){
+      const ICON = {done:'✓', running:'●', failed:'✕', pending:'○'};
+      psteps.innerHTML = s.steps.map(st =>
+        `<div class="st ${st.state}"><span class="ic">${ICON[st.state]||''}</span>${st.label}</div>`
+      ).join('');
+    }
+    if (String(s.stage||'').startsWith('error')){ clearInterval(iv); pstage.textContent = s.stage; return; }
     if (s.stage === 'done'){ clearInterval(iv); location.href = '/watch/' + id; }
   }, 1500);
 }

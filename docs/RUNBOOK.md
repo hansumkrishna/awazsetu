@@ -118,7 +118,8 @@ which models it has, installed Whisper sizes, translation engines, MMS voices.
 | Chat answers come back in English when Hindi/Marathi was selected | The translation worker could not load (low RAM) | Free RAM, or lower the ASR/LLM size |
 | "This video does not cover that" for a question you believe is answered | Groundedness guard fired — the fact is not in the transcript, or ASR garbled it | Check the transcript; re-process with a larger ASR model |
 | Subtitles look like nonsense | ASR ran with the wrong model or wrong language | Confirm `asr_model=medium`; press Re-process. Language is auto-detected — check the log line "language auto-detected" |
-| Processing is very slow | CPU-only with beam 5 | Expected: roughly 2–3× realtime on an i5. Pre-process ahead of time; that is what the cache is for |
+| Processing is very slow | CPU-only, beam 5, and every voiceover is built up front | Expected. Processing is a one-time cost per video; playback is then instant. Pre-process before a demo |
+| A voiceover button says "not generated" | That language was not selected when the video was processed | Add it in Settings → Target languages, then press **Re-process** |
 | Ollama not found | Not installed / not on PATH | Install Ollama, then `ollama serve` |
 | Player shows no video | `video.mp4` missing in the work folder | Re-upload, or copy the source file in |
 
@@ -134,9 +135,15 @@ video ──ffmpeg──> audio.wav
              ├─ glossary: fix known Marathi/Hindi ASR mishears
              └─ NLLB-200 CT2 INT8 (subprocess) → hi / mr / en
                     ├─ WebVTT subtitle tracks  (player switches live)
-                    ├─ MMS-TTS (subprocess)    → dub.<lang>.wav
+                    ├─ MMS-TTS (subprocess)    → dub.<lang>.wav  [ALL languages, now]
                     └─ manifest.json ──> BM25 index ──> Ollama LLM ──> chat / voice
 ```
+
+**Everything a viewer consumes is precomputed at save time** — transcript, all
+translations, all subtitle tracks and **every voiceover** — behind a multi-step progress
+bar. At playback nothing is synthesised. The only real-time work is the **chat and voice
+assistant**, which must be live because the question is not known in advance.
+Re-process rebuilds the whole set with the current settings.
 
 Heavy models run in **short-lived subprocesses** so torch, CTranslate2 and CUDA never
 share the server process, and memory is released between stages. Nothing is ever

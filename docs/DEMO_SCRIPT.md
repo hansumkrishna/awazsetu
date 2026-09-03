@@ -44,8 +44,10 @@ Say the hardware line early: *i5, 16 GB, no GPU needed — the machine BAIF alre
 2. Open **401.2 Housing of Goat**. Play ~15 seconds with **Marathi** subtitles.
 3. Switch subtitles to **हिंदी**, then **English** — *without reloading the video*.
    > "Same video, three languages, instantly. The farmer picks their language."
-4. Under "Hear it in another language", choose **हिंदी** → the Hindi voiceover plays,
-   aligned to the video.
+4. Under "Hear it in another language", choose **हिंदी** → the Hindi voiceover plays
+   **instantly**, aligned to the video.
+   > "Nothing is being generated right now. Subtitles and all three voiceovers were made
+   > when the video was saved — you watched the progress bar do it."
    > "For someone who cannot read, we don't just subtitle it — we speak it."
 
 ### B. Ask the video a question (4 min)
@@ -101,7 +103,7 @@ Say the hardware line early: *i5, 16 GB, no GPU needed — the machine BAIF alre
 | Chat is slow / LLM won't load | Switch to `qwen2.5:1.5b` in Settings (one dropdown, ~5s) | Both models pre-pulled |
 | Chat fails completely | Show the pre-captured Q&A screenshots and move to subtitles/dub | Screenshots in `notes/` |
 | Voice/mic not permitted in browser | Use the typed chat; explain the voice loop with the recorded clip | Pre-recorded wav ready |
-| Dub takes too long | Every dub is pre-generated and cached — it plays instantly | Pre-generate all before 12:00 |
+| Dub takes too long | Cannot happen — voiceovers are built at save time, never at playback | Confirm each language has a dub.<lang>.wav |
 | A video won't open | Switch to another of the 8 — all are processed | 8 videos cached |
 | Laptop is memory-starved | Close everything; Settings → smaller ASR + 1.5b LLM | Rehearsed |
 | Total app failure | Walk the architecture diagram in `notes/RUNBOOK.md` §5 and the test evidence | Printed/ready |

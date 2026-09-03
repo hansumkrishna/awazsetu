@@ -78,7 +78,7 @@
       <button class="btn" data-dub="{{ t.lang }}" onclick="playDub('{{ t.lang }}')">{{ t.name }}</button>
       {% endfor %}
     </div>
-    <div class="hint" id="dubhint">First time for a language takes ~30–60s to synthesize, then it's instant.</div>
+    <div class="hint" id="dubhint">Voiceovers are generated when the video is saved — playback is instant.</div>
     <audio id="dub" preload="none"></audio>
 
     <div class="label">Download</div>
@@ -214,7 +214,7 @@ async function playDub(lang){
   try{
     const r = await fetch('/dub/'+VID+'/'+lang);
     const j = await r.json();
-    if (j.error){ hint.textContent = 'dub error: '+j.error; return; }
+    if (j.error){ hint.textContent = 'This voiceover was not generated for this video. Use Re-process to build it.'; return; }
     dubLang = lang; dubAudio.src = j.url; video.muted = true;
     dubAudio.currentTime = video.currentTime;
     if (!video.paused) dubAudio.play();

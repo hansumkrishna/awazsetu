@@ -70,30 +70,58 @@ if len(sys.argv) > 1:
     work = os.path.join(work_root, video_id(vp))
     os.makedirs(work, exist_ok=True)
 
-    def _status(stage, pct):
-        try:
-            with open(os.path.join(work, "status.json"), "w", encoding="utf-8") as f:
-                json.dump({"stage": stage, "pct": pct}, f)
-        except Exception:
-            pass
+    import subprocess
+    from progress import Progress
 
-    def log(msg):
-        print(msg)
-        for tag, st, pct in (("[1/4]", "Extracting audio", 8),
-                             ("[2/4]", "Transcribing (ASR)", 20),
-                             ("[3/4]", "Translating", 65),
-                             ("[4/4]", "Finalizing subtitles", 95)):
-            if tag in msg:
-                _status(st, pct)
-
-    _status("Queued", 2)
     try:
         import config as _cfg
         _targets = tuple(_cfg.load().get("langs") or ("hi", "mr", "en"))
     except Exception:
         _targets = ("hi", "mr", "en")
-    m = process_video(vp, work_root, targets=_targets, log=log)
-    _status("done", 100)
+
+    # Every asset the viewer consumes is built HERE, behind the progress bar:
+    # transcript, translations, subtitles AND all voiceovers. Nothing is
+    # synthesised at playback — only chat and voice chat run in real time.
+    prog = Progress(work, langs=_targets)
+
+    def log(msg):
+        print(msg)
+        for tag, key in (("[1/4]", "extract"), ("[2/4]", "asr"),
+                         ("[3/4]", "mt"), ("[4/4]", "subs")):
+            if tag in msg:
+                for k in ("extract", "asr", "mt", "subs"):
+                    if k == key:
+                        break
+                    prog.done(k)
+                prog.start(key)
+
+    try:
+        m = process_video(vp, work_root, targets=_targets, log=log)
+        for k in ("extract", "asr", "mt", "subs"):
+            prog.done(k)
+
+        # --- voiceovers, precomputed one language at a time -------------------
+        langs = [L for L in m.get("langs", []) if L in ("hi", "mr", "en")]
+        prog.add_dubs(langs)
+        worker = os.path.join(HERE, "dub_worker.py")
+        manifest = os.path.join(work, "manifest.json")
+        for L in langs:
+            out = os.path.join(work, f"dub.{L}.wav")
+            if os.path.exists(out) and os.path.getsize(out) > 10000:
+                prog.done(f"dub:{L}")
+                continue
+            prog.start(f"dub:{L}")
+            try:
+                subprocess.run([sys.executable, worker, manifest, L, out],
+                               check=True, timeout=2400)
+                prog.done(f"dub:{L}")
+            except Exception as e:
+                print(f"warn: dub {L} failed: {e}")
+                prog.fail(f"dub:{L}", "not available")
+        prog.finish()
+    except Exception as e:
+        prog.error(str(e))
+        raise
     print("done:", m["id"], "langs:", m["langs"], "engine:", m["mt_engine"])
 else:
     import server

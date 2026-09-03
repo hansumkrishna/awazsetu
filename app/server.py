@@ -90,14 +90,11 @@ def dub(vid: str, lang: str):
     import sys
     work = os.path.join(WORK, vid)
     out = os.path.join(work, f"dub.{lang}.wav")
-    if not os.path.exists(out):
-        worker = os.path.join(APP_DIR, "dub_worker.py")
-        manifest = os.path.join(work, "manifest.json")
-        try:
-            subprocess.run([sys.executable, worker, manifest, lang, out],
-                           check=True, timeout=900)
-        except Exception as e:
-            return jsonify({"error": str(e)}), 500
+    if not os.path.exists(out) or os.path.getsize(out) < 10000:
+        # Voiceovers are pre-built during processing so playback is instant. A missing
+        # one means this video predates that language being selected -> Re-process.
+        return jsonify({"error": "voiceover not generated for this language",
+                        "hint": "use Re-process to rebuild with the current settings"}), 404
     return jsonify({"url": f"/media/{vid}/dub.{lang}.wav"})
 
 
@@ -315,8 +312,10 @@ def reprocess(vid: str):
                 os.remove(os.path.join(work, fn))
             except Exception:
                 pass
+    # run.py rebuilds transcript, translations, subtitles AND every voiceover with the
+    # current settings; the player polls /status/<vid> for the same multi-step bar.
     with open(os.path.join(work, "status.json"), "w", encoding="utf-8") as fp:
-        json.dump({"stage": "Queued (re-process)", "pct": 1}, fp)
+        json.dump({"stage": "Queued (re-process)", "pct": 1, "steps": []}, fp)
     subprocess.Popen([sys.executable, os.path.join(APP_DIR, "run.py"), src],
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return jsonify({"id": vid, "reprocessing": True})
