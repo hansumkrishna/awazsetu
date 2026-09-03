@@ -13,7 +13,9 @@ import json
 import ctranslate2
 from transformers import AutoTokenizer
 
-FLORES = {"hi": "hin_Deva", "mr": "mar_Deva", "en": "eng_Latn"}
+import sys as _s, os as _o
+_s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__)))
+from langs import FLORES  # single source of truth for language codes
 
 
 def main():

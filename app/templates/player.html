@@ -41,6 +41,11 @@
 .msg.a.ungrounded{border-left:3px solid #c98a00;background:#fff8e8}
 .msg.a.ungrounded::before{content:'⚠ not covered by this video';display:block;
   font-size:11px;color:#8a6100;letter-spacing:.02em;margin-bottom:4px}
+.audioart{background:linear-gradient(135deg,#b01c24 0%,#7d1319 100%);color:#fff;
+  border-radius:10px;padding:26px 20px;text-align:center;margin-bottom:10px}
+.audioart-icon{font-size:38px;line-height:1;opacity:.9}
+.audioart-name{font-size:15px;font-weight:600;margin-top:8px;word-break:break-word}
+.audioart-sub{font-size:12.5px;opacity:.85;margin-top:6px;min-height:1.2em}
 </style>
 </head>
 <body>
@@ -56,12 +61,28 @@
 <div class="wrap">
   <!-- LEFT: video + language switch -->
   <div class="card">
+    {% if m.kind == 'audio' %}
+    <!-- Audio-only source: an <audio> element still carries subtitle tracks, so the
+         language switcher, dub and jump-to-timestamp all behave exactly as for video. -->
+    <div class="audioart">
+      <div class="audioart-icon">&#9835;</div>
+      <div class="audioart-name">{{ m.video }}</div>
+      <div class="audioart-sub" id="cuebox">Audio &middot; subtitles below</div>
+    </div>
+    <audio id="v" controls crossorigin="anonymous" preload="metadata" style="width:100%">
+      <source src="/media/{{ m.id }}/media">
+      {% for t in tracks %}
+      <track kind="subtitles" src="/media/{{ m.id }}/{{ t.file }}" srclang="{{ t.lang }}" label="{{ t.name }}">
+      {% endfor %}
+    </audio>
+    {% else %}
     <video id="v" controls crossorigin="anonymous" preload="metadata">
-      <source src="/media/{{ m.id }}/video" type="video/mp4">
+      <source src="/media/{{ m.id }}/media">
       {% for t in tracks %}
       <track kind="subtitles" src="/media/{{ m.id }}/{{ t.file }}" srclang="{{ t.lang }}" label="{{ t.name }}">
       {% endfor %}
     </video>
+    {% endif %}
 
     <div class="label">Subtitles — switch anytime</div>
     <div class="btns" id="subbtns">
@@ -158,7 +179,8 @@ async function send(){
   }catch(e){
     const M={en:'Could not reach the local assistant. Is the app still running?',
              hi:'स्थानीय सहायक तक पहुँच नहीं सका। क्या ऐप चल रहा है?',
-             mr:'स्थानिक सहाय्यकाशी संपर्क होऊ शकला नाही. अॅप सुरू आहे का?'};
+             mr:'स्थानिक सहाय्यकाशी संपर्क होऊ शकला नाही. अॅप सुरू आहे का?',
+             or:'ସ୍ଥାନୀୟ ସହାୟକ ସହ ଯୋଗାଯୋଗ ହୋଇପାରିଲା ନାହିଁ। ଆପ୍ ଚାଲୁଛି କି?'};
     wait.innerHTML = M[alang]||M.en; wait.classList.add('ungrounded');
     console.error('chat failed:', e);
   }
@@ -202,6 +224,22 @@ async function toggleMic(){
   mediaRec.start(); recording=true; micBtn.classList.add('rec');
   setVState('🎙️ Listening… tap the mic again to stop.');
 }
+
+// Audio-only: <audio> renders no cue overlay, so mirror the active cue under the art.
+(function(){
+  const box = document.getElementById('cuebox');
+  if (!box) return;
+  function bind(){
+    for (const tr of video.textTracks){
+      tr.oncuechange = () => {
+        if (tr.mode !== 'showing') return;
+        const c = tr.activeCues && tr.activeCues[0];
+        box.textContent = c ? c.text : '';
+      };
+    }
+  }
+  bind(); video.addEventListener('loadedmetadata', bind);
+})();
 
 // ---- dub: generate on demand, then play in sync with the video ----
 const dubAudio = document.getElementById('dub');

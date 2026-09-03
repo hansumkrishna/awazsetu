@@ -31,6 +31,7 @@ LITE_HUB = [
     "models--facebook--mms-tts-hin",
     "models--facebook--mms-tts-mar",
     "models--facebook--mms-tts-eng",
+    "models--facebook--mms-tts-ory",   # Odia voiceover
     "models--facebook--nllb-200-distilled-600M",  # tokenizer for the CT2 engine
 ]
 CODE = ["app", "scripts", "docs", "requirements.txt", "README.md",

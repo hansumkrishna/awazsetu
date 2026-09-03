@@ -12,7 +12,7 @@ import os
 import json
 import time
 
-LANG_NAMES = {"hi": "हिंदी", "mr": "मराठी", "en": "English"}
+from langs import LANG_NAMES
 
 # (key, label, relative cost) — cost drives the weighting of the overall bar so it
 # advances at a believable rate instead of jumping.

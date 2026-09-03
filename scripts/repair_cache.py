@@ -17,7 +17,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault("HF_HOME", os.path.join(REPO, "models", "hf-cache"))
 os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("AWAZ_NLLB_CT2_DIR", os.path.join(REPO, "models", "nllb-int8"))
-os.environ.setdefault("AWAZ_MT", "nllb")
+os.environ.setdefault("AWAZ_MT", "indictrans2")
 os.environ["CUDA_VISIBLE_DEVICES"] = ""      # repair is CPU-only; no ASR is run
 sys.path.insert(0, os.path.join(REPO, "app"))
 
@@ -27,15 +27,23 @@ WORK = os.path.join(REPO, "app", "data", "work")
 
 
 def main():
+    wanted = set(sys.argv[1:])
     dirs = sorted(d for d in glob.glob(os.path.join(WORK, "*"))
-                  if os.path.exists(os.path.join(d, "transcript.raw.json")))
+                  if os.path.exists(os.path.join(d, "transcript.raw.json"))
+                  and (not wanted or os.path.basename(d) in wanted))
     print(f"{len(dirs)} cached video(s) to repair", flush=True)
     out = []
     for i, d in enumerate(dirs, 1):
         vid = os.path.basename(d)
-        video = os.path.join(d, "video.mp4")
-        if not os.path.exists(video):
-            print(f"[{i}/{len(dirs)}] {vid}: no video.mp4, skipping", flush=True)
+        # Audio sources are stored as audio.<ext>, not video.mp4 — looking only for
+        # video.mp4 silently skipped every audio file.
+        video = None
+        for fn in sorted(os.listdir(d)):
+            if fn.startswith(("video.", "audio.")):
+                video = os.path.join(d, fn)
+                break
+        if not video:
+            print(f"[{i}/{len(dirs)}] {vid}: no source media, skipping", flush=True)
             continue
         before, prev_name = 0, None
         mp = os.path.join(d, "manifest.json")

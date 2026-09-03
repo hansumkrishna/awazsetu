@@ -31,7 +31,7 @@ def _model() -> str:
 
 def _fallback() -> str:
     return os.environ.get("AWAZ_LLM_FALLBACK", "qwen2.5:1.5b")
-LANG_FULL = {"hi": "Hindi", "mr": "Marathi", "en": "English"}
+from langs import LANG_FULL  # single source of truth for language codes
 SENTINEL = "NOT_IN_TRANSCRIPT"
 
 # Pre-written UI strings. Never machine-translated (that is how an error message
@@ -40,6 +40,7 @@ STR_NOT_COVERED = {
     "en": "This video does not cover that. The closest lines I found are below.",
     "hi": "इस वीडियो में इसकी जानकारी नहीं है। सबसे नज़दीकी पंक्तियाँ नीचे दी गई हैं।",
     "mr": "या व्हिडिओमध्ये याची माहिती नाही. सर्वात जवळच्या ओळी खाली दिल्या आहेत.",
+    "or": "ଏହି ଭିଡିଓରେ ସେ ବିଷୟରେ କିଛି ନାହିଁ। ନିକଟତମ ଧାଡ଼ିଗୁଡ଼ିକ ତଳେ ଦିଆଯାଇଛି।",
 }
 STR_LLM_DOWN = {
     "en": ("The local AI model could not be loaded — not enough free memory. "
@@ -48,11 +49,14 @@ STR_LLM_DOWN = {
            "कृपया अन्य ऐप बंद करें, या सेटिंग्स में छोटा मॉडल चुनें।"),
     "mr": ("स्थानिक AI मॉडेल लोड होऊ शकले नाही — पुरेशी मेमरी नाही. "
            "कृपया इतर अ‍ॅप्स बंद करा, किंवा सेटिंग्जमध्ये लहान मॉडेल निवडा."),
+    "or": ("ସ୍ଥାନୀୟ AI ମଡେଲ ଲୋଡ ହୋଇପାରିଲା ନାହିଁ — ଯଥେଷ୍ଟ ମେମୋରୀ ନାହିଁ। "
+           "ଅନ୍ୟ ଆପ୍ ବନ୍ଦ କରନ୍ତୁ, କିମ୍ବା ସେଟିଂସରେ ଛୋଟ ମଡେଲ ବାଛନ୍ତୁ।"),
 }
 STR_LOW_ASR = {
     "en": "Note: the audio was hard to transcribe, so this answer may be imprecise.",
     "hi": "सूचना: ऑडियो स्पष्ट न होने के कारण यह उत्तर अनुमानित हो सकता है।",
     "mr": "सूचना: ऑडिओ स्पष्ट नसल्याने हे उत्तर अचूक नसू शकते.",
+    "or": "ଦ୍ରଷ୍ଟବ୍ୟ: ଅଡିଓ ସ୍ପଷ୍ଟ ନ ଥିବାରୁ ଏହି ଉତ୍ତର ଅନୁମାନିକ ହୋଇପାରେ।",
 }
 
 _bm25_cache: dict[str, tuple] = {}

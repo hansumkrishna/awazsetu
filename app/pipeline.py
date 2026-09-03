@@ -18,6 +18,12 @@ from asr import (extract_audio, WhisperASR, transcript_confidence,
                  sanitize_segments)
 from mt import get_mt
 from subs import write_vtt
+from langs import DEFAULT_TARGETS
+
+# Audio-only sources are fully supported: the pipeline only ever needed the audio
+# track, so the sole difference is that the player renders an <audio> element.
+AUDIO_EXT = {".mp3", ".wav", ".m4a", ".aac", ".ogg", ".oga", ".opus",
+             ".flac", ".wma", ".amr", ".aiff", ".alac"}
 
 
 def video_id(path: str) -> str:
@@ -29,22 +35,33 @@ def video_id(path: str) -> str:
 
 
 def process_video(video_path: str, work_root: str, src_lang: str | None = None,
-                  targets=("hi", "mr", "en"), asr=None, mt=None, log=print) -> dict:
+                  targets=None, asr=None, mt=None, log=print) -> dict:
     """Process one video end to end.
 
     `src_lang=None` AUTO-DETECTS the spoken language. Never assume: decoding
     Marathi audio with language="hi" yields fluent-looking Devanagari nonsense,
     which then propagates into the subtitles, the dub and the chat answers.
     """
+    targets = tuple(targets) if targets else DEFAULT_TARGETS
     vid = video_id(video_path)
     work = os.path.join(work_root, vid)
     os.makedirs(work, exist_ok=True)
-    if not os.path.exists(os.path.join(work, "video.mp4")):
+    # Keep the source in its own container: an .mp3 re-labelled .mp4 will not play.
+    ext = os.path.splitext(video_path)[1].lower() or ".mp4"
+    kind = "audio" if ext in AUDIO_EXT else "video"
+    media_name = ("audio" if kind == "audio" else "video") + ext
+    if not any(f.startswith(("video.", "audio.")) for f in os.listdir(work)):
         try:
             import shutil
-            shutil.copy(video_path, os.path.join(work, "video.mp4"))
+            shutil.copy(video_path, os.path.join(work, media_name))
         except Exception:
             pass
+    else:
+        for f in os.listdir(work):
+            if f.startswith(("video.", "audio.")):
+                media_name = f
+                kind = "audio" if f.startswith("audio.") else "video"
+                break
     wav = os.path.join(work, "audio.wav")
 
     log(f"[1/4] extract audio -> {wav}")
@@ -136,7 +153,7 @@ def process_video(video_path: str, work_root: str, src_lang: str | None = None,
         except Exception:
             prev_name = None
     disp = os.path.basename(video_path)
-    if disp == "video.mp4" and prev_name:
+    if disp in ("video.mp4", media_name) and prev_name:
         disp = prev_name
     manifest = {
         "id": vid, "video": disp,
@@ -144,6 +161,7 @@ def process_video(video_path: str, work_root: str, src_lang: str | None = None,
         "duration": segs[-1]["end"] if segs else 0.0,
         "mt_engine": mt.NAME, "vtts": vtts, "segments": segs,
         "asr_confidence": conf,
+        "media": media_name, "kind": kind,
         "asr_model": os.environ.get("AWAZ_WHISPER", "small"),
     }
     with open(os.path.join(work, "manifest.json"), "w", encoding="utf-8") as f:

@@ -16,8 +16,9 @@ os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")  # CPU-only; safe when spawned
 import torch
 from transformers import VitsModel, AutoTokenizer
 
-MMS = {"hi": "facebook/mms-tts-hin", "mr": "facebook/mms-tts-mar",
-       "en": "facebook/mms-tts-eng"}
+import sys as _s, os as _o
+_s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__)))
+from langs import MMS
 
 
 import re as _re

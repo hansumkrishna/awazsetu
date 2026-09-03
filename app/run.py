@@ -41,7 +41,7 @@ os.environ.setdefault("AWAZ_DEVICE", "cpu")
 os.environ.setdefault("AWAZ_CPU_THREADS", "4")
 # NLLB is UNGATED and does every hi/mr/en direction -> the self-sufficient default
 # (no HF login needed). IndicTrans2 is an optional higher-Indic upgrade after login.
-os.environ.setdefault("AWAZ_MT", "nllb")
+os.environ.setdefault("AWAZ_MT", "indictrans2")
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 
 # Plain local NLLB dir (real files, eviction-proof, native-path safe). Use a WINDOWS-
@@ -72,16 +72,21 @@ if len(sys.argv) > 1:
 
     import subprocess
     from progress import Progress
+    from langs import DEFAULT_TARGETS, MMS
 
     try:
         import config as _cfg
-        _targets = tuple(_cfg.load().get("langs") or ("hi", "mr", "en"))
+        _targets = tuple(_cfg.load().get("langs") or DEFAULT_TARGETS)
     except Exception:
-        _targets = ("hi", "mr", "en")
+        _targets = DEFAULT_TARGETS
 
     # Every asset the viewer consumes is built HERE, behind the progress bar:
     # transcript, translations, subtitles AND all voiceovers. Nothing is
     # synthesised at playback — only chat and voice chat run in real time.
+    # AWAZ_SRC_LANG forces the transcription language. Needed for Odia: Whisper has
+    # no `or` model, but its Devanagari decoder renders Odia speech phonetically,
+    # which is far more useful than the Bengali gibberish auto-detect produces.
+    _src = os.environ.get("AWAZ_SRC_LANG") or None
     prog = Progress(work, langs=_targets)
 
     def log(msg):
@@ -96,12 +101,12 @@ if len(sys.argv) > 1:
                 prog.start(key)
 
     try:
-        m = process_video(vp, work_root, targets=_targets, log=log)
+        m = process_video(vp, work_root, src_lang=_src, targets=_targets, log=log)
         for k in ("extract", "asr", "mt", "subs"):
             prog.done(k)
 
         # --- voiceovers, precomputed one language at a time -------------------
-        langs = [L for L in m.get("langs", []) if L in ("hi", "mr", "en")]
+        langs = [L for L in m.get("langs", []) if L in MMS]
         prog.add_dubs(langs)
         worker = os.path.join(HERE, "dub_worker.py")
         manifest = os.path.join(work, "manifest.json")

@@ -22,8 +22,13 @@ try:
 except Exception:
     from IndicTransToolkit import IndicProcessor  # type: ignore
 
-FLORES = {"hi": "hin_Deva", "mr": "mar_Deva", "en": "eng_Latn"}
-INDIC = {"hi", "mr"}
+import sys as _s, os as _o
+_s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__)))
+from langs import FLORES  # single source of truth for language codes
+# Every non-English language in the shared table is Indic for routing purposes.
+# This was hardcoded to {"hi","mr"}, which made IndicTrans2 reject en->or even
+# though the model supports Odia.
+INDIC = {k for k in FLORES if k != "en"}
 REPOS = {
     "indic-en": "ai4bharat/indictrans2-indic-en-dist-200M",
     "en-indic": "ai4bharat/indictrans2-en-indic-dist-200M",

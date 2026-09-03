@@ -16,11 +16,31 @@ mimetypes.add_type("text/vtt", ".vtt")
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
 WORK = os.path.join(APP_DIR, "data", "work")
-LANG_NAMES = {"hi": "हिंदी", "mr": "मराठी", "en": "English"}
+from langs import LANG_NAMES
 
 app = Flask(__name__,
             template_folder=os.path.join(APP_DIR, "templates"),
             static_folder=os.path.join(APP_DIR, "static"))
+
+
+def _media_name(vid: str) -> str:
+    """The source file as it was saved. Audio uploads keep their own extension —
+    an .mp3 served as video.mp4 will not play in any browser."""
+    work = os.path.join(WORK, vid)
+    mp = os.path.join(work, "manifest.json")
+    if os.path.exists(mp):
+        try:
+            with open(mp, encoding="utf-8") as f:
+                n = json.load(f).get("media")
+            if n and os.path.exists(os.path.join(work, n)):
+                return n
+        except Exception:
+            pass
+    if os.path.isdir(work):
+        for f in sorted(os.listdir(work)):
+            if f.startswith(("video.", "audio.")):
+                return f
+    return "video.mp4"
 
 
 def load_manifest(vid: str) -> dict:
@@ -40,6 +60,7 @@ def index():
             if os.path.exists(mp):
                 m = json.load(open(mp, encoding="utf-8"))
                 vids.append({"id": d, "video": m.get("video"),
+                             "kind": m.get("kind", "video"),
                              "langs": m.get("langs", [])})
     return render_template("index.html", videos=vids, lang_names=LANG_NAMES)
 
@@ -56,8 +77,8 @@ def watch(vid: str):
 
 @app.route("/media/<vid>/<path:fn>")
 def media(vid: str, fn: str):
-    if fn == "video":
-        fn = "video.mp4"
+    if fn in ("video", "media"):
+        fn = _media_name(vid)
     return send_from_directory(os.path.join(WORK, vid), fn, conditional=True)
 
 
@@ -120,15 +141,21 @@ def upload():
         return jsonify({"error": "no file"}), 400
     updir = os.path.join(APP_DIR, "data", "uploads")
     os.makedirs(updir, exist_ok=True)
-    path = os.path.join(updir, secure_filename(f.filename) or "video.mp4")
+    safe = secure_filename(f.filename) or "video.mp4"
+    if not os.path.splitext(safe)[1]:
+        safe += ".mp4"
+    path = os.path.join(updir, safe)
     f.save(path)
     vid = _content_id(path)
     work = os.path.join(WORK, vid)
     os.makedirs(work, exist_ok=True)
     if os.path.exists(os.path.join(work, "manifest.json")):
         return jsonify({"id": vid, "cached": True})   # dedup: already processed
-    try:
-        shutil.copy(path, os.path.join(work, "video.mp4"))
+    try:  # keep the original extension so audio stays audio
+        ext = os.path.splitext(path)[1].lower() or ".mp4"
+        from pipeline import AUDIO_EXT
+        base = "audio" if ext in AUDIO_EXT else "video"
+        shutil.copy(path, os.path.join(work, base + ext))
     except Exception:
         pass
     with open(os.path.join(work, "status.json"), "w", encoding="utf-8") as fp:
@@ -184,7 +211,8 @@ def voice_chat(vid: str):
     if not q:
         NOHEAR = {"en": "I could not hear that clearly. Please try again.",
                   "hi": "आवाज़ स्पष्ट नहीं सुनाई दी। कृपया दोबारा बोलें।",
-                  "mr": "आवाज स्पष्ट ऐकू आला नाही. कृपया पुन्हा बोला."}
+                  "mr": "आवाज स्पष्ट ऐकू आला नाही. कृपया पुन्हा बोला.",
+                  "or": "ସ୍ୱର ସ୍ପଷ୍ଟ ଶୁଣାଗଲା ନାହିଁ। ଦୟାକରି ପୁଣି କୁହନ୍ତୁ।"}
         return jsonify({"question": "", "answer": NOHEAR.get(lang, NOHEAR["en"]),
                         "sources": [], "audio": None, "grounded": False})
 
@@ -256,7 +284,7 @@ def export_mkv(vid: str):
     if not os.path.exists(out):
         subs = [L for L in m["langs"] if os.path.exists(os.path.join(work, f"subs.{L}.vtt"))]
         dubs = [L for L in m["langs"] if os.path.exists(os.path.join(work, f"dub.{L}.wav"))]
-        cmd = ["ffmpeg", "-y", "-i", os.path.join(work, "video.mp4")]
+        cmd = ["ffmpeg", "-y", "-i", os.path.join(work, _media_name(vid))]
         for L in subs:
             cmd += ["-i", os.path.join(work, f"subs.{L}.vtt")]
         for L in dubs:
@@ -302,7 +330,7 @@ def reprocess(vid: str):
     import subprocess
     import sys
     work = os.path.join(WORK, vid)
-    src = os.path.join(work, "video.mp4")
+    src = os.path.join(work, _media_name(vid))
     if not os.path.exists(src):
         return jsonify({"error": "source video not found"}), 404
     for fn in os.listdir(work):

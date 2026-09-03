@@ -20,7 +20,7 @@ import json
 import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-FLORES = {"hi": "hin_Deva", "mr": "mar_Deva", "en": "eng_Latn"}
+from langs import FLORES  # single source of truth for language codes
 INDIC = {"hi", "mr"}
 
 

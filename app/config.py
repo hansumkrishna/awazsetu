@@ -15,10 +15,10 @@ PATH = os.path.join(HERE, "settings.json")
 DEFAULTS = {
     "asr_model": "medium",              # video transcription (benchmarked best quality/speed for Indic)
     "mic_model": "small",               # voice-input STT (whisper size)
-    "translate_engine": "nllb",         # nllb (ungated) | indictrans2 (needs login)
+    "translate_engine": "indictrans2",  # measured markedly better for hi/mr/or than NLLB
     "chat_llm": "qwen2.5:3b",           # Ollama model
     "chat_llm_fallback": "qwen2.5:1.5b",
-    "langs": ["hi", "mr", "en"],        # target languages to generate
+    "langs": ["hi", "mr", "en", "or"],  # target languages to generate (Odia = target only)
     "cpu_threads": 0,                   # 0 = auto (half the logical cores)
     "device": "cpu",                    # cpu | cuda
     "beam": 5,                          # ASR/MT beam (1=fast, 5=markedly better Indic accuracy)
@@ -191,8 +191,13 @@ def translate_engines() -> dict:
 
 
 def mms_voices() -> list[str]:
-    return [L for L, r in (("hi", "hin"), ("mr", "mar"), ("en", "eng"))
-            if _hub(f"models--facebook--mms-tts-{r}")]
+    """Which voiceover voices are installed, derived from the shared language table."""
+    from langs import MMS
+    out = []
+    for code, repo in MMS.items():
+        if _hub("models--" + repo.replace("/", "--")):
+            out.append(code)
+    return out
 
 
 def status() -> dict:
