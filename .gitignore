@@ -33,6 +33,7 @@ Thumbs.db
 desktop.ini
 
 # --- demo logistics notes & screenshots (contain meeting credentials) ---
+# docs/ holds the shareable copies of the handover material.
 /notes/
 /screenshots/
 
