@@ -38,7 +38,7 @@ def _media_name(vid: str) -> str:
             pass
     if os.path.isdir(work):
         for f in sorted(os.listdir(work)):
-            if f.startswith(("video.", "audio.")):
+            if f.startswith(("video.", "audio.")) and f != "audio.wav":
                 return f
     return "video.mp4"
 

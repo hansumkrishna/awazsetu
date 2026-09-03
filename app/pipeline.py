@@ -50,15 +50,16 @@ def process_video(video_path: str, work_root: str, src_lang: str | None = None,
     ext = os.path.splitext(video_path)[1].lower() or ".mp4"
     kind = "audio" if ext in AUDIO_EXT else "video"
     media_name = ("audio" if kind == "audio" else "video") + ext
-    if not any(f.startswith(("video.", "audio.")) for f in os.listdir(work)):
+    if not any(f.startswith(("video.", "audio.")) and f != "audio.wav"
+               for f in os.listdir(work)):
         try:
             import shutil
             shutil.copy(video_path, os.path.join(work, media_name))
         except Exception:
             pass
     else:
-        for f in os.listdir(work):
-            if f.startswith(("video.", "audio.")):
+        for f in sorted(os.listdir(work)):
+            if f.startswith(("video.", "audio.")) and f != "audio.wav":
                 media_name = f
                 kind = "audio" if f.startswith("audio.") else "video"
                 break

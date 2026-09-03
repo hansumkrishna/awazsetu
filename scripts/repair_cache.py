@@ -39,7 +39,7 @@ def main():
         # video.mp4 silently skipped every audio file.
         video = None
         for fn in sorted(os.listdir(d)):
-            if fn.startswith(("video.", "audio.")):
+            if fn.startswith(("video.", "audio.")) and fn != "audio.wav":
                 video = os.path.join(d, fn)
                 break
         if not video:
