@@ -43,3 +43,6 @@ desktop.ini
 # --- supplied test media ---
 /Videos.zip
 /test_videos/
+
+# --- built distribution packages ---
+/dist/

@@ -210,7 +210,7 @@ def status() -> dict:
         "translate_engines": translate_engines(),
         "mms_voices": mms_voices(),
         "offline": True,
-        "guide": MODEL_GUIDE,
+        "guide": model_guide(),
         "it2_directions": indictrans2_directions(),
     }
 
@@ -246,5 +246,19 @@ MODEL_GUIDE = {
 }
 
 
-def model_guide() -> dict:
-    return MODEL_GUIDE
+def model_guide(installed_only: bool = True) -> dict:
+    """Guidance for the models actually present on this machine.
+
+    A slim install ships only the models the defaults use, so advertising
+    large-v3 or IndicTrans2 there would offer choices that cannot be selected.
+    """
+    if not installed_only:
+        return MODEL_GUIDE
+    asr = set(whisper_installed())
+    mt = {k for k, v in translate_engines().items() if v}
+    llm = set(ollama_models())
+    out = {"asr": {k: v for k, v in MODEL_GUIDE["asr"].items() if k in asr},
+           "mt": {k: v for k, v in MODEL_GUIDE["mt"].items() if k in mt},
+           "llm": {k: v for k, v in MODEL_GUIDE["llm"].items()
+                   if not llm or k in llm}}
+    return {k: v for k, v in out.items() if v}

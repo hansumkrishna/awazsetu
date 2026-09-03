@@ -125,5 +125,6 @@ if len(sys.argv) > 1:
     print("done:", m["id"], "langs:", m["langs"], "engine:", m["mt_engine"])
 else:
     import server
-    print("AwazSetu → http://127.0.0.1:5000")
-    server.app.run(host="127.0.0.1", port=5000, threaded=True)
+    port = int(os.environ.get("AWAZ_PORT", "5000"))
+    print(f"AwazSetu → http://127.0.0.1:{port}")
+    server.app.run(host="127.0.0.1", port=port, threaded=True)
