@@ -75,6 +75,33 @@ def main():
         if a.startswith("--workers"):
             workers = int(a.split("=")[1]) if "=" in a else 4
 
+    # Cap by FREE memory, not by core count. A torch process carrying a VITS voice
+    # sits near 1 GB once loaded, and the native extensions crash with an access
+    # violation rather than raising MemoryError, so there is nothing to recover from
+    # after the fact — the limit has to be applied before launching.
+    try:
+        import ctypes
+
+        class _MS(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong),
+                        ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong),
+                        ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong),
+                        ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+        _m = _MS()
+        _m.dwLength = ctypes.sizeof(_MS)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(_m))
+        free_gb = _m.ullAvailPhys / (1024 ** 3)
+        safe = max(1, int(free_gb // 1.3))
+        if safe < workers:
+            print(f"{free_gb:.1f} GB free -> capping {workers} workers to {safe}", flush=True)
+            workers = safe
+    except Exception:
+        pass
+
     todo = jobs(force)
     os.makedirs(os.path.dirname(LOG), exist_ok=True)
     fh = open(LOG, "a", encoding="utf-8")
