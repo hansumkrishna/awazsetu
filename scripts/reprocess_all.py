@@ -8,11 +8,14 @@ which is the weakest Indic model in the guide. This re-runs each item from its o
 cached source media — the content hash is unchanged, so the work-folder id, the
 library entry and every existing URL stay valid.
 
-ASR runs on the GPU and MT in a CPU subprocess, so voiceovers (also CPU) are left to
-a second, parallel phase: scripts/build_dubs_par.py.
+Three phases, because they want different hardware:
+  1. ASR   - GPU, one subprocess per item (a shared CUDA context exhausts a 4 GB card)
+  2. MT    - CPU, several items in parallel, grouped by direction checkpoint
+  3. Dubs  - CPU, several voices in parallel (scripts/build_dubs_par.py)
 
-`transcript.raw.json` short-circuits ASR in pipeline.process_video, so it is deleted
-per item — otherwise this would silently re-emit the same `small` transcript.
+`transcript.raw.json` short-circuits ASR in pipeline.process_video, so it is dropped when
+it came from a weaker model — otherwise this would silently re-emit the same transcript.
+It is KEPT when it already came from the target model, so an interrupted run resumes.
 """
 from __future__ import annotations
 import os
@@ -215,6 +218,21 @@ def main():
         phase_asr(todo, fh)
     if "--asr-only" not in sys.argv:
         phase_mt(todo, fh, workers)
+
+    # Phase 3: voiceovers. Every existing one is stale after a re-transcription --
+    # it still plays, so nothing looks broken, but it speaks the previous transcript.
+    if "--no-dubs" not in sys.argv and "--asr-only" not in sys.argv:
+        import subprocess
+        helper = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                              "build_dubs_par.py")
+        log("=== phase 3: voiceovers ===", fh)
+        r = subprocess.run([sys.executable, "-u", helper, "--workers=4"],
+                           capture_output=True, text=True, encoding="utf-8",
+                           errors="replace", timeout=14400)
+        for ln in (r.stdout or "").splitlines()[-40:]:
+            log("  " + ln, fh)
+        if r.returncode != 0:
+            log(f"  voiceover phase rc={r.returncode} :: {(r.stderr or '')[-300:]}", fh)
 
     log(f"=== all phases done in {(time.time()-t_all)/60:.1f} min ===", fh)
     fh.close()

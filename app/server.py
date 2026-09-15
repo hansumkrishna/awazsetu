@@ -44,11 +44,23 @@ def _media_name(vid: str) -> str:
 
 
 def load_manifest(vid: str) -> dict:
+    """Load a manifest with `id` forced to the FOLDER it came from.
+
+    The folder is the identity: every route resolves by it and every URL embeds it.
+    The stored `id` is the content hash recorded at ingest, and the two diverge if a
+    source file is ever replaced in place. player.html builds the media source, each
+    subtitle track, the exports and the chat id from `m.id`, so a divergence renders
+    a player whose every URL points at a directory that does not exist.
+    """
     p = os.path.join(WORK, vid, "manifest.json")
     if not os.path.exists(p):
         abort(404)
     with open(p, encoding="utf-8") as f:
-        return json.load(f)
+        m = json.load(f)
+    if m.get("id") != vid:
+        m["id_recorded"] = m.get("id")
+        m["id"] = vid
+    return m
 
 
 @app.route("/")
