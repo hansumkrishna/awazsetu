@@ -88,8 +88,31 @@ def build_html(team_no: str) -> str:
     # Render a visible marker when a required value has not been supplied, so the pack
     # cannot be sent out silently carrying a blank or an invented one.
     tno = f" [{team_no}]" if team_no else f' <span class="todo">[{TODO_TEAM}]</span>'
+    # Owners arrive as "Name <email>; Name <email>" or "Name - email; ...".
+    # Render names on the cover and a proper name/contact table in the handover,
+    # rather than one run-on line that reads like an afterthought.
     owners = D.OWNERS
-    owners_html = e(owners) if owners else f'<span class="todo">{TODO_OWNERS}</span>'
+    people = []
+    for chunk in (owners or "").replace(";", "\n").splitlines():
+        chunk = chunk.strip().rstrip(",")
+        if not chunk:
+            continue
+        nm, em = chunk, ""
+        for sep in ("<", " - ", " — ", ","):
+            if sep in chunk:
+                nm, em = chunk.split(sep, 1)
+                break
+        people.append((nm.strip(), em.strip().strip("<>").strip()))
+    owners_html = (", ".join(e(n) for n, _ in people) if people
+                   else f'<span class="todo">{TODO_OWNERS}</span>')
+    # Match the technical owner by name, not by position in the list — a reordered
+    # --owners argument should not silently reassign who owns the code.
+    tech_owner = os.environ.get("AWAZ_TECH_OWNER", "Hansum").lower()
+    owner_rows = "".join(
+        f"<tr><td>{e(n)}</td><td><code>{e(em)}</code></td>"
+        f"<td>{'Technical owner — pipeline, models, packaging, this pack' if tech_owner in n.lower() else 'Team member'}</td></tr>"
+        for n, em in people) or (
+        f'<tr><td colspan="3"><span class="todo">{TODO_OWNERS}</span></td></tr>')
     pending = ([] if team_no else ["team number"]) + ([] if owners else ["owners / contacts"])
     gpu_name = (hw.get("gpu") or {}).get("name", "no discrete GPU")
 
@@ -586,10 +609,10 @@ at the next upload.</p>
 
 <h3>Ownership and contacts</h3>
 <table>
-<tr><th>Role</th><th>Who</th><th>Scope</th></tr>
-<tr><td>Technical owner</td><td>{owners_html}</td><td>Pipeline, models, packaging, this pack</td></tr>
-<tr><td>Team</td><td>{e(TEAM)}{tno}</td><td>BAIF Hackathon submission</td></tr>
-<tr><td>Receiving organisation</td><td>BAIF</td><td>Operation, content curation, glossary ownership</td></tr>
+<tr><th>Name</th><th>Contact</th><th>Role</th></tr>
+<tr><th colspan="3">Team {e(TEAM)}{tno}</th></tr>
+{owner_rows}
+<tr><td>BAIF</td><td>—</td><td>Receiving organisation: operation, content curation, glossary ownership</td></tr>
 </table>
 
 <h3>Credentials approach</h3>
@@ -706,7 +729,10 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
     stem = (f"BAIF_Hackathon_{TEAM.replace(' ', '')}"
             + (f"[{team_no}]" if team_no else "[TBD]") + "_DocumentationPack")
-    safe = stem.replace("[", "_").replace("]", "")
+    # Keep the brackets: the stated convention is literally TeamName[team #], and a
+    # submission checked against a convention should match it character for character.
+    # Square brackets are valid in Windows filenames and in mail attachments.
+    safe = stem
     html_path = os.path.join(out_dir, safe + ".html")
     doc = build_html(team_no)
     with open(html_path, "w", encoding="utf-8") as f:

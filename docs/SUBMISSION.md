@@ -26,7 +26,7 @@ time, so it needs no other editing.
 
 | # | Item | Where | Note |
 |---|---|---|---|
-| 1 | **The Documentation Pack (PDF)** | `dist\BAIF_Hackathon_FluentFusion[#]_DocumentationPack.pdf` | The required deliverable. PDF is their stated preference. |
+| 1 | **The Documentation Pack (PDF)** | `dist\BAIF_Hackathon_FluentFusion[7]_DocumentationPack.pdf` | The required deliverable. PDF is their stated preference. |
 | 2 | **Git repository link** | https://github.com/hansumkrishna/awazsetu | Listed in their email as an acceptable supporting link. Push before sending. |
 | 3 | **The LITE package** (optional) | `dist\awazsetu-lite.zip` (split into ~1.9 GB parts) | Too large to email. Share via a drive link if they want to run it themselves. `JOIN-awazsetu-lite.bat` rejoins the parts. |
 
@@ -39,7 +39,7 @@ the repo and the pack carry the evidence, and the demo was given in person on 3 
 
 > Dear Anshul,
 >
-> Please find attached the Documentation Pack for **Team Fluent Fusion**, covering the
+> Please find attached the Documentation Pack for **Team 7 — Fluent Fusion**, covering the
 > six areas requested: solution overview, architecture, tech stack, performance,
 > testing evidence, deployment and handover.
 >
@@ -59,7 +59,8 @@ the repo and the pack carry the evidence, and the demo was given in person on 3 
 > through any section or run the system live.
 >
 > Kind regards,
-> *[your name]*
+> Sivani, Hansum and Lahari
+> *Team 7 — Fluent Fusion*
 
 ---
 
