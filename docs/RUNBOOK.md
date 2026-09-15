@@ -16,7 +16,7 @@ who has never met the build team.
 | 3 | Assistant backend | `AwazSetu-Check.bat` line `Chat LLM backend` | In-process llama.cpp. Nothing to install or start |
 | 4 | Chat weights present | `models\llm\*.gguf` | Shipped in both packages. No pull, no network |
 | 5 | `models/` folder present (~6.3 GB) | `dir models` | Copy from USB — **never** re-download at the venue |
-| 6 | Python deps | `pip install -r requirements.txt` | Use the bundled wheels folder (offline install) |
+| 6 | Python deps | nothing to check | Preinstalled inside `runtime\python\`. There is no pip step |
 | 7 | Pre-processed cache | `app/data/work/` has folders | Copy from USB. **This is the fallback plan** — the demo needs zero processing. |
 
 > **Carry on a USB drive:** the whole repo *including* `models/` and `app/data/work/`,
@@ -45,7 +45,7 @@ chat question. If all four work, the demo is safe.
 ```bash
 # 1. dependencies — CPU torch keeps the footprint small
 pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements.txt
+REM Nothing to install. The runtime ships with every dependency.
 
 # 2. one-time model download (~6 GB into ./models/). Needs network ONCE.
 python scripts/download_models.py

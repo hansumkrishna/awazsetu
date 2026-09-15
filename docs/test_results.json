@@ -1,35 +1,755 @@
 [
  {
+  "suite": "assets",
+  "case": "subtitle:401.3.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "17254B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.3.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "16180B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.3.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "7972B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.3.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "20878B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:401.3.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "70 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:401.3.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "mean_logprob=-0.103",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:604.3.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "19516B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:604.3.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "18378B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:604.3.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "9103B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:604.3.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "18950B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:604.3.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "74 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:604.3.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "mean_logprob=-0.097",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.6.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "12435B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.6.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "12389B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.6.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "5953B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.6.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "14336B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:401.6.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "41 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:401.6.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "mean_logprob=-0.107",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English1.mp3",
+  "lang": "hi",
+  "ok": true,
+  "detail": "871B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English1.mp3",
+  "lang": "mr",
+  "ok": true,
+  "detail": "972B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English1.mp3",
+  "lang": "en",
+  "ok": true,
+  "detail": "415B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English1.mp3",
+  "lang": "or",
+  "ok": true,
+  "detail": "925B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:English1.mp3",
+  "lang": "all",
+  "ok": true,
+  "detail": "3 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:English1.mp3",
+  "lang": "en",
+  "ok": true,
+  "detail": "mean_logprob=-0.086",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.7 Field Gude_ Women Group.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "16055B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.7 Field Gude_ Women Group.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "15897B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.7 Field Gude_ Women Group.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "7726B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.7 Field Gude_ Women Group.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "18692B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:401.7 Field Gude_ Women Group.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "64 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:401.7 Field Gude_ Women Group.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "mean_logprob=-0.097",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:Hindi farmer interview (hi).mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "4441B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:Hindi farmer interview (hi).mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "6065B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:Hindi farmer interview (hi).mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "2085B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:Hindi farmer interview (hi).mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "4413B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:Hindi farmer interview (hi).mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "13 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:Hindi farmer interview (hi).mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "mean_logprob=-0.08",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.5.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "11443B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.5.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "11424B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.5.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "5261B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.5.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "12982B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:401.5.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "43 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:401.5.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "mean_logprob=-0.094",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.1.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "8692B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.1.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "8999B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.1.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "4280B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.1.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "10404B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:401.1.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "31 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:401.1.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "mean_logprob=-0.095",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English.mp3",
+  "lang": "hi",
+  "ok": true,
+  "detail": "645B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English.mp3",
+  "lang": "mr",
+  "ok": true,
+  "detail": "724B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English.mp3",
+  "lang": "en",
+  "ok": true,
+  "detail": "306B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English.mp3",
+  "lang": "or",
+  "ok": true,
+  "detail": "659B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:English.mp3",
+  "lang": "all",
+  "ok": true,
+  "detail": "1 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:English.mp3",
+  "lang": "en",
+  "ok": true,
+  "detail": "mean_logprob=-0.051",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English2.mp3",
+  "lang": "hi",
+  "ok": true,
+  "detail": "1728B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English2.mp3",
+  "lang": "mr",
+  "ok": true,
+  "detail": "1710B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English2.mp3",
+  "lang": "en",
+  "ok": true,
+  "detail": "857B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English2.mp3",
+  "lang": "or",
+  "ok": true,
+  "detail": "1791B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:English2.mp3",
+  "lang": "all",
+  "ok": true,
+  "detail": "7 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:English2.mp3",
+  "lang": "en",
+  "ok": true,
+  "detail": "mean_logprob=-0.129",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English3.mp3",
+  "lang": "hi",
+  "ok": true,
+  "detail": "2490B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English3.mp3",
+  "lang": "mr",
+  "ok": true,
+  "detail": "2540B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English3.mp3",
+  "lang": "en",
+  "ok": true,
+  "detail": "1105B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:English3.mp3",
+  "lang": "or",
+  "ok": true,
+  "detail": "2617B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:English3.mp3",
+  "lang": "all",
+  "ok": true,
+  "detail": "7 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:English3.mp3",
+  "lang": "en",
+  "ok": true,
+  "detail": "mean_logprob=-0.131",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:14 कृत्रिम गर्भाधान के निर्धारित मापदंड - Odia.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "4574B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:14 कृत्रिम गर्भाधान के निर्धारित मापदंड - Odia.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "5000B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:14 कृत्रिम गर्भाधान के निर्धारित मापदंड - Odia.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "2507B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:14 कृत्रिम गर्भाधान के निर्धारित मापदंड - Odia.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "5035B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:14 कृत्रिम गर्भाधान के निर्धारित मापदंड - Odia.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "24 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:14 कृत्रिम गर्भाधान के निर्धारित मापदंड - Odia.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "mean_logprob=-0.175",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.4 storyboard.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "11153B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.4 storyboard.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "9191B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.4 storyboard.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "4598B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.4 storyboard.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "9540B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:401.4 storyboard.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "37 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:401.4 storyboard.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "mean_logprob=-0.103",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:12 मादा में गर्मी (हीट) की जांच - Odia.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "2078B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:12 मादा में गर्मी (हीट) की जांच - Odia.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "3309B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:12 मादा में गर्मी (हीट) की जांच - Odia.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "943B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:12 मादा में गर्मी (हीट) की जांच - Odia.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "2098B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:12 मादा में गर्मी (हीट) की जांच - Odia.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "6 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:12 मादा में गर्मी (हीट) की जांच - Odia.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "mean_logprob=-0.159",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.2 HOUSING OF GOAT.mp4",
+  "lang": "hi",
+  "ok": true,
+  "detail": "9884B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.2 HOUSING OF GOAT.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "10575B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.2 HOUSING OF GOAT.mp4",
+  "lang": "en",
+  "ok": true,
+  "detail": "4918B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "subtitle:401.2 HOUSING OF GOAT.mp4",
+  "lang": "or",
+  "ok": true,
+  "detail": "10813B",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "all-langs-translated:401.2 HOUSING OF GOAT.mp4",
+  "lang": "all",
+  "ok": true,
+  "detail": "39 segments",
+  "secs": null
+ },
+ {
+  "suite": "assets",
+  "case": "asr-confidence:401.2 HOUSING OF GOAT.mp4",
+  "lang": "mr",
+  "ok": true,
+  "detail": "mean_logprob=-0.118",
+  "secs": null
+ },
+ {
   "suite": "chat",
   "case": "on-topic",
   "lang": "hi",
   "ok": true,
-  "detail": "यह वीडियो बकरियों को प्रभावित करने वाली बीमारियों के उपचार और प्रबंधन के बारे में है, जिसमें विभिन्न बीमारियों जैसे कि रक्तस्राव सेप्टिकमिया और अन्य ज",
-  "secs": 56.6
+  "detail": "यह वीडियो बकरियों में माडल रोग (शेफ पोक्स) के लक्षणों, कारणों और उपचार के बारे में है, जिसमें रोकथाम और नियंत्रण उपायों को शामिल किया गया है।",
+  "secs": 42.1
  },
  {
   "suite": "chat",
   "case": "on-topic",
   "lang": "mr",
   "ok": true,
-  "detail": "या व्हिडिओमध्ये शेळींच्या रोगांच्या उपचाराबद्दल आणि प्रतिबंधाबद्दल माहिती आहे, ज्यात लक्षणे, निदान आणि उपचार पद्धती जसे की अलगाव आणि शेड साफ करणे यांच",
-  "secs": 42.0
+  "detail": "या व्हिडिओमध्ये मदील रोगावर लक्ष केंद्रित करून, शेळींवर परिणाम करणारे विविध रोग, लक्षणे, कारणे आणि उपचार यांचा समावेश आहे.",
+  "secs": 33.5
  },
  {
   "suite": "chat",
   "case": "on-topic",
   "lang": "en",
   "ok": true,
-  "detail": "This video is about the treatment and management of diseases affecting goats, including the classification of diseases, remedies, and preventive measu",
-  "secs": 26.6
+  "detail": "This video is about the treatment and prevention of diseases in goats, including specific diseases like hemorrhagic septicemia and enterotoxemia, and ",
+  "secs": 26.9
  },
  {
   "suite": "chat",
   "case": "on-topic",
   "lang": "or",
-  "ok": false,
-  "detail": "Traceback (most recent call last):\n  File \"C:\\users\\hansu\\awazsetu\\scripts\\test_e2e.py\", line 102, in suite_chat\n    r = answer(m, GOOD_Q[L], L)\nKeyError: 'or'\n",
-  "secs": 0.0
+  "ok": true,
+  "detail": "ଏହି ଭିଡିଓରେ ଛେଳିମାନଙ୍କଠାରେ ରୋଗର ବୁଝିବା ଏବଂ ଚିକିତ୍ସା ବିଷୟରେ ଆଲୋଚନା କରାଯାଇଛି, ଯେଉଁଥିରେ ଏହାର ଲକ୍ଷଣ, କାରଣ ଏବଂ ସଂକ୍ରାମକ ଏବଂ ଅଣସଂକ୍ରାମକ ରୋଗରେ ବର୍ଗୀକରଣ ରହିଛି",
+  "secs": 39.5
  },
  {
   "suite": "refusal",
@@ -37,7 +757,7 @@
   "lang": "hi",
   "ok": true,
   "detail": "इस वीडियो में इसकी जानकारी नहीं है। सबसे नज़दीकी पंक्तियाँ नीचे दी गई हैं।",
-  "secs": 28.9
+  "secs": 28.6
  },
  {
   "suite": "refusal",
@@ -45,7 +765,7 @@
   "lang": "mr",
   "ok": true,
   "detail": "या व्हिडिओमध्ये याची माहिती नाही. सर्वात जवळच्या ओळी खाली दिल्या आहेत.",
-  "secs": 27.7
+  "secs": 27.3
  },
  {
   "suite": "refusal",
@@ -53,14 +773,254 @@
   "lang": "en",
   "ok": true,
   "detail": "This video does not cover that. The closest lines I found are below.",
-  "secs": 22.7
+  "secs": 23.2
  },
  {
   "suite": "refusal",
   "case": "offtopic-refused",
   "lang": "or",
-  "ok": false,
-  "detail": "'or'",
+  "ok": true,
+  "detail": "ଏହି ଭିଡିଓରେ ସେ ବିଷୟରେ କିଛି ନାହିଁ। ନିକଟତମ ଧାଡ଼ିଗୁଡ଼ିକ ତଳେ ଦିଆଯାଇଛି।",
+  "secs": 27.8
+ },
+ {
+  "suite": "dub",
+  "case": "voiceover",
+  "lang": "hi",
+  "ok": true,
+  "detail": "cached 22131KB",
+  "secs": null
+ },
+ {
+  "suite": "dub",
+  "case": "voiceover",
+  "lang": "mr",
+  "ok": true,
+  "detail": "cached 22131KB",
+  "secs": null
+ },
+ {
+  "suite": "dub",
+  "case": "voiceover",
+  "lang": "en",
+  "ok": true,
+  "detail": "cached 22131KB",
+  "secs": null
+ },
+ {
+  "suite": "dub",
+  "case": "voiceover",
+  "lang": "or",
+  "ok": true,
+  "detail": "cached 22131KB",
+  "secs": null
+ },
+ {
+  "suite": "voice",
+  "case": "tts",
+  "lang": "hi",
+  "ok": true,
+  "detail": "71KB",
+  "secs": 5.2
+ },
+ {
+  "suite": "voice",
+  "case": "stt",
+  "lang": "hi",
+  "ok": true,
+  "detail": "यह वीएो किस मारे में है।",
+  "secs": 6.7
+ },
+ {
+  "suite": "voice",
+  "case": "tts",
+  "lang": "mr",
+  "ok": true,
+  "detail": "71KB",
+  "secs": 4.5
+ },
+ {
+  "suite": "voice",
+  "case": "stt",
+  "lang": "mr",
+  "ok": true,
+  "detail": "हा विर्यु कशा बुद़्ला है.",
+  "secs": 6.4
+ },
+ {
+  "suite": "voice",
+  "case": "tts",
+  "lang": "en",
+  "ok": true,
+  "detail": "71KB",
+  "secs": 4.6
+ },
+ {
+  "suite": "voice",
+  "case": "stt",
+  "lang": "en",
+  "ok": true,
+  "detail": "What is this video about?",
+  "secs": 5.3
+ },
+ {
+  "suite": "voice",
+  "case": "tts",
+  "lang": "or",
+  "ok": true,
+  "detail": "47KB",
+  "secs": 4.3
+ },
+ {
+  "suite": "voice",
+  "case": "stt",
+  "lang": "or",
+  "ok": true,
+  "detail": "लेई भिरी रो क्यों बिश है",
+  "secs": 7.2
+ },
+ {
+  "suite": "settings",
+  "case": "switch-llm-applies",
+  "lang": "-",
+  "ok": true,
+  "detail": "chat._model()=qwen2.5:1.5b",
+  "secs": null
+ },
+ {
+  "suite": "settings",
+  "case": "switch-asr-applies",
+  "lang": "-",
+  "ok": true,
+  "detail": "AWAZ_WHISPER=small",
+  "secs": null
+ },
+ {
+  "suite": "settings",
+  "case": "status-detects-models",
+  "lang": "-",
+  "ok": true,
+  "detail": "whisper=['tiny', 'base', 'small', 'medium', 'large-v3'] mms=['hi', 'mr', 'en', 'or']",
+  "secs": null
+ },
+ {
+  "suite": "settings",
+  "case": "guide-present",
+  "lang": "-",
+  "ok": true,
+  "detail": "per-language model guidance exposed",
+  "secs": null
+ },
+ {
+  "suite": "settings",
+  "case": "restored",
+  "lang": "-",
+  "ok": true,
+  "detail": "chat_llm=qwen2.5:3b",
+  "secs": null
+ },
+ {
+  "suite": "platform",
+  "case": "ffmpeg_resolves",
+  "lang": "-",
+  "ok": true,
+  "detail": "bundled: ffmpeg version 7.1.1-essentials_build-www.gy",
+  "secs": 0.0
+ },
+ {
+  "suite": "platform",
+  "case": "embedded_runtime",
+  "lang": "-",
+  "ok": true,
+  "detail": "3.10.11 2.5.1+cpu",
+  "secs": 3.2
+ },
+ {
+  "suite": "platform",
+  "case": "llm_answers",
+  "lang": "-",
+  "ok": true,
+  "detail": "backend=llamacpp model=qwen2.5:3b -> '12 goats.'",
+  "secs": 1.1
+ },
+ {
+  "suite": "platform",
+  "case": "offline_enforced",
+  "lang": "-",
+  "ok": true,
+  "detail": "HF_HUB_OFFLINE=1",
+  "secs": null
+ },
+ {
+  "suite": "platform",
+  "case": "garden_catalog",
+  "lang": "-",
+  "ok": true,
+  "detail": "13 models, tasks=['asr', 'llm', 'mt', 'tts'], tier=workstation, presets=4",
+  "secs": 1.7
+ },
+ {
+  "suite": "platform",
+  "case": "presets_honest",
+  "lang": "-",
+  "ok": true,
+  "detail": "every preset's availability matches what is installed",
+  "secs": 0.1
+ },
+ {
+  "suite": "platform",
+  "case": "preset_apply_roundtrip",
+  "lang": "-",
+  "ok": true,
+  "detail": "medium -> fast_low_ram=small -> balanced=medium; unknown preset returns 404",
+  "secs": 0.2
+ },
+ {
+  "suite": "platform",
+  "case": "odia_not_a_source",
+  "lang": "or",
+  "ok": true,
+  "detail": "langs.py records Odia as target-only; no ASR model claims to read it",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "audio_sources_processed",
+  "lang": "-",
+  "ok": true,
+  "detail": "4 audio item(s), 11 video item(s)",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "source_file_present",
+  "lang": "-",
+  "ok": true,
+  "detail": "every manifest points at a real source container",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "odia_subtitles",
+  "lang": "or",
+  "ok": true,
+  "detail": "15/15 items with an Odia target have an Odia track",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "odia_voiceover",
+  "lang": "or",
+  "ok": true,
+  "detail": "15/15 items have an audible Odia voiceover",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "no_subtitleless_items",
+  "lang": "-",
+  "ok": true,
+  "detail": "every item has at least one subtitle track",
   "secs": null
  }
 ]

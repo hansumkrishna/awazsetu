@@ -13,8 +13,8 @@
 | Sivani Tumuluri | **Team lead** | sivani.tumuluri@noexternalmail.hsbc.com |
 | Hansum Krishna | **Technical owner** — pipeline, models, packaging | hansum.krishna@hsbc.co.in |
 | Lahari Gali | Team member | lahari.gali@hsbc.co.in |
-| Uthsava Kumari | Team member | — |
-| Sakshi Jain | Team member | — |
+| Uthsava Kumari | Team member | uthsava.kumari@hsbc.co.in |
+| Sakshi Jain | Team member | sakshi3.jain@hsbc.co.in |
 
 **The build and models, on Google Drive:**
 https://drive.google.com/drive/folders/1XU_praP4yQI96gfpGzHaK01Uthx6WYmc?usp=sharing
@@ -22,7 +22,7 @@ https://drive.google.com/drive/folders/1XU_praP4yQI96gfpGzHaK01Uthx6WYmc?usp=sha
 To regenerate the pack at any time — every figure is re-read from the repository:
 
 ```bat
-python scripts\build_docpack.py --team 7 --owners "Sivani Tumuluri <sivani.tumuluri@noexternalmail.hsbc.com> | Team lead; Hansum Krishna <hansum.krishna@hsbc.co.in> | Technical owner - pipeline, models, packaging; Lahari Gali <lahari.gali@hsbc.co.in> | Team member; Uthsava Kumari | Team member; Sakshi Jain | Team member" --pdf
+python scripts\build_docpack.py --team 7 --owners "Sivani Tumuluri <sivani.tumuluri@noexternalmail.hsbc.com> | Team lead; Hansum Krishna <hansum.krishna@hsbc.co.in> | Technical owner - pipeline, models, packaging; Lahari Gali <lahari.gali@hsbc.co.in> | Team member; Uthsava Kumari <uthsava.kumari@hsbc.co.in> | Team member; Sakshi Jain <sakshi3.jain@hsbc.co.in> | Team member" --pdf
 ```
 ---
 
