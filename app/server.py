@@ -294,6 +294,7 @@ def export_transcript(vid: str):
 @app.route("/export/<vid>/mkv")
 def export_mkv(vid: str):
     import subprocess
+    import config as _c
     work = os.path.join(WORK, vid)
     m = load_manifest(vid)
     out = os.path.join(work, "bundle.mkv")
