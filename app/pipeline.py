@@ -44,6 +44,14 @@ def process_video(video_path: str, work_root: str, src_lang: str | None = None,
     """
     targets = tuple(targets) if targets else DEFAULT_TARGETS
     vid = video_id(video_path)
+    # If the source already lives INSIDE a work folder, that folder is the identity and
+    # this is a re-process: write back to it. Recomputing the hash is right for a new
+    # upload, but here it creates a second folder whenever the stored id has drifted
+    # from the content (which happens if a source file was ever replaced in place) —
+    # duplicating the item in the library and re-running ASR from scratch.
+    _src = os.path.abspath(video_path)
+    if os.path.abspath(os.path.dirname(os.path.dirname(_src))) == os.path.abspath(work_root):
+        vid = os.path.basename(os.path.dirname(_src))
     work = os.path.join(work_root, vid)
     os.makedirs(work, exist_ok=True)
     # Keep the source in its own container: an .mp3 re-labelled .mp4 will not play.
