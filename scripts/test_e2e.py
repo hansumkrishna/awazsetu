@@ -19,9 +19,11 @@ os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("AWAZ_NLLB_CT2_DIR", os.path.join(REPO, "models", "nllb-int8"))
 os.environ.setdefault("PYTHONIOENCODING", "utf-8")
 sys.path.insert(0, os.path.join(REPO, "app"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 WORK = os.path.join(REPO, "app", "data", "work")
-LANGS = ["mr", "hi", "en"]
+from langs import DEFAULT_TARGETS          # noqa: E402  (adds Odia automatically)
+LANGS = list(DEFAULT_TARGETS)
 RESULTS = []
 
 
@@ -34,10 +36,22 @@ def rec(suite, case, lang, ok, detail="", secs=None):
 
 
 def manifests():
+    """Load every manifest, with `id` forced to the FOLDER name.
+
+    The folder is the real identity — server.load_manifest() resolves by folder, and
+    every URL embeds it. The `id` field is the content hash recorded at ingest, and
+    the two can diverge if a source file is replaced in place. Trusting the field
+    instead of the folder made callers build paths to directories that do not exist.
+    """
     out = []
     for d in sorted(glob.glob(os.path.join(WORK, "*", "manifest.json"))):
         try:
-            out.append(json.load(open(d, encoding="utf-8")))
+            m = json.load(open(d, encoding="utf-8"))
+            folder = os.path.basename(os.path.dirname(d))
+            if m.get("id") != folder:
+                m["id_recorded"] = m.get("id")
+                m["id"] = folder
+            out.append(m)
         except Exception:
             pass
     return out
@@ -199,13 +213,16 @@ def suite_settings(ms):
             f"chat_llm={config.load()['chat_llm']}")
 
 
+from test_suites_platform import suite_platform, suite_media   # noqa: E402
+
 SUITES = {"assets": suite_assets, "chat": suite_chat, "refusal": suite_refusal,
-          "dub": suite_dub, "voice": suite_voice, "settings": suite_settings}
+          "dub": suite_dub, "voice": suite_voice, "settings": suite_settings,
+          "platform": suite_platform, "media": suite_media}
 
 
 def write_report():
-    os.makedirs(os.path.join(REPO, "notes"), exist_ok=True)
-    p = os.path.join(REPO, "notes", "TEST_EVIDENCE.md")
+    os.makedirs(os.path.join(REPO, "docs"), exist_ok=True)
+    p = os.path.join(REPO, "docs", "TEST_EVIDENCE.md")
     total = len(RESULTS)
     passed = sum(1 for r in RESULTS if r["ok"])
     with open(p, "w", encoding="utf-8") as f:
@@ -224,7 +241,7 @@ def write_report():
             for r in fails:
                 f.write(f"- **{r['suite']}/{r['case']}** ({r['lang']}): {r['detail']}\n")
     print(f"\nreport -> {p}  ({passed}/{total} passed)", flush=True)
-    with open(os.path.join(REPO, "notes", "test_results.json"), "w", encoding="utf-8") as f:
+    with open(os.path.join(REPO, "docs", "test_results.json"), "w", encoding="utf-8") as f:
         json.dump(RESULTS, f, ensure_ascii=False, indent=1)
     return passed, total
 

@@ -94,8 +94,10 @@ def process_video(video_path: str, work_root: str, src_lang: str | None = None,
             log("      WARNING: ASR confidence is low — transcript may be unreliable. "
                 "Consider a larger model (Settings -> ASR model).")
         with open(raw, "w", encoding="utf-8") as f:
-            json.dump({"lang": detected, "segments": segs, "confidence": conf},
-                      f, ensure_ascii=False)
+            # Stamp which model produced this cache. Without it a re-run cannot tell a
+            # good large-v3 transcript from a stale `small` one and has to redo ASR.
+            json.dump({"lang": detected, "segments": segs, "confidence": conf,
+                       "asr_model": asr.size}, f, ensure_ascii=False)
         if own_asr:  # STAGED LOADING: free ASR before MT so peak RAM stays flat
             del asr
             gc.collect()

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Garden — AwazSetu</title>
+<style>
+  :root { --red:#c0272d; --ink:#1a1a1a; --mut:#6b6b6b; --line:#e7e7e7; --bg:#f6f6f4;
+          --q5:#1a7f37; --q4:#4a9c5d; --q3:#c99a2e; --q2:#d9762b; --q1:#b01c24; --qna:#e9e9e6; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; align-items:center; gap:12px; padding:14px 22px; background:#fff;
+           border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
+  .logo { width:18px; height:18px; background:var(--red); border-radius:3px; }
+  header b { font-size:19px; } .tag { color:var(--mut); font-size:13px; }
+  header nav { margin-left:auto; display:flex; gap:16px; font-size:14px; }
+  header nav a { color:#b01c24; text-decoration:none; }
+  .wrap { max-width:1120px; margin:22px auto 60px; padding:0 18px; }
+  h1 { font-size:22px; margin:0 0 4px; }
+  .lede { color:var(--mut); font-size:14px; margin:0 0 22px; max-width:70ch; line-height:1.55; }
+  h3 { margin:26px 0 10px; font-size:13px; text-transform:uppercase; letter-spacing:.6px; color:var(--mut); }
+  .card { background:#fff; border:1px solid var(--line); border-radius:12px; padding:16px 18px; }
+
+  /* ---- your machine ---- */
+  .machine { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; align-items:start; }
+  .stat .k { font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--mut); }
+  .stat .v { font-size:19px; font-weight:600; margin-top:3px; }
+  .stat .s { font-size:12px; color:var(--mut); }
+  .tierbadge { display:inline-block; background:var(--red); color:#fff; border-radius:999px;
+               padding:3px 12px; font-size:12.5px; font-weight:600; }
+
+  /* ---- presets ---- */
+  .presets { display:grid; grid-template-columns:repeat(auto-fit,minmax(235px,1fr)); gap:12px; }
+  .preset { background:#fff; border:1px solid var(--line); border-radius:12px; padding:14px 15px;
+            display:flex; flex-direction:column; }
+  .preset.rec { border-color:var(--red); box-shadow:0 0 0 3px #c0272d18; }
+  .preset .pt { font-weight:600; font-size:15px; display:flex; align-items:center; gap:7px; }
+  .preset .pill { font-size:10.5px; background:var(--red); color:#fff; border-radius:999px;
+                  padding:2px 7px; font-weight:600; letter-spacing:.3px; }
+  .preset .pw { font-size:12.5px; color:var(--mut); margin:7px 0 10px; line-height:1.5; flex:1; }
+  .preset dl { margin:0 0 10px; font-size:12px; display:grid; grid-template-columns:auto 1fr; gap:2px 10px; }
+  .preset dt { color:var(--mut); } .preset dd { margin:0; font-variant-numeric:tabular-nums; }
+  .rambar { height:7px; border-radius:99px; background:#eee; overflow:hidden; margin:2px 0 9px; display:flex; }
+  .rambar i { display:block; height:100%; }
+  .rambar .proc { background:#7aa7c7; } .rambar .chat { background:var(--red); }
+  .preset button { border:1px solid var(--red); background:var(--red); color:#fff; border-radius:8px;
+                   padding:8px; font-size:13px; cursor:pointer; font-weight:600; }
+  .preset button.ghost { background:#fff; color:var(--red); }
+  .preset button[disabled] { background:#eee; border-color:#ddd; color:#999; cursor:not-allowed; }
+
+  /* ---- matrix ---- */
+  .scroller { overflow-x:auto; background:#fff; border:1px solid var(--line); border-radius:12px; }
+  table { border-collapse:collapse; width:100%; font-size:13px; min-width:860px; }
+  th, td { padding:9px 10px; text-align:left; border-bottom:1px solid var(--line); white-space:nowrap; }
+  thead th { font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--mut);
+             background:#fafaf8; position:sticky; top:0; }
+  tbody tr:hover { background:#fcfbf9; }
+  tr.group td { background:#f3f2ef; font-weight:600; font-size:11.5px; text-transform:uppercase;
+                letter-spacing:.6px; color:#555; border-bottom:1px solid #e2e1dd; }
+  .mname { font-weight:600; } .meng { color:var(--mut); font-size:11.5px; }
+  .q { width:34px; text-align:center; font-weight:700; color:#fff; border-radius:6px;
+       display:inline-block; padding:3px 0; font-size:12px; }
+  .q5{background:var(--q5)} .q4{background:var(--q4)} .q3{background:var(--q3)}
+  .q2{background:var(--q2)} .q1{background:var(--q1)}
+  .qna{background:var(--qna); color:#9a9a93; font-weight:600;}
+  .spark { display:inline-block; width:52px; height:7px; background:#eee; border-radius:99px; overflow:hidden; }
+  .spark i { display:block; height:100%; background:#7aa7c7; }
+  .badge { font-size:11px; border-radius:999px; padding:2px 8px; border:1px solid var(--line); color:#555; }
+  .badge.ok { background:#eaf6ed; border-color:#bfe0c8; color:#1a7f37; }
+  .badge.no { background:#faf0f0; border-color:#eccccd; color:#b01c24; }
+  .badge.warn { background:#fdf5e7; border-color:#efdcb4; color:#8a6412; }
+  .num { font-variant-numeric:tabular-nums; color:#444; }
+  .why { color:var(--mut); font-size:12.5px; white-space:normal; line-height:1.5; max-width:460px; }
+  .m { font-size:10px; color:#8a6412; background:#fdf5e7; border:1px solid #efdcb4;
+       border-radius:4px; padding:1px 5px; margin-left:6px; vertical-align:1px; }
+  .legend { display:flex; flex-wrap:wrap; gap:14px; align-items:center; font-size:12px;
+            color:var(--mut); margin-top:10px; }
+  .legend .q { width:26px; }
+  #toast { position:fixed; left:50%; transform:translateX(-50%); bottom:26px; background:#1a1a1a;
+           color:#fff; padding:11px 18px; border-radius:9px; font-size:13.5px; display:none; z-index:20; }
+  .foot { color:var(--mut); font-size:12.5px; margin-top:26px; line-height:1.6; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo"></div><b>AwazSetu</b><span class="tag">· Model Garden</span>
+  <nav><a href="/">← Library</a><a href="/settings">⚙ Settings</a></nav>
+</header>
+
+<div class="wrap">
+  <h1>Model Garden</h1>
+  <p class="lede">
+    Every model this build can use, scored per language and measured against the machine
+    it is running on. Scores are 1–5. A dash means the model <em>cannot</em> do that
+    language at all — which is different from doing it badly. Rows marked
+    <span class="m">measured</span> come from this project's own media; the rest reflect
+    published behaviour.
+  </p>
+
+  <!-- ------------------------------------------------ your machine -->
+  <h3>This machine</h3>
+  <div class="card machine">
+    <div class="stat"><div class="k">Tier</div>
+      <div class="v"><span class="tierbadge">{{ g.hardware.tier_label }}</span></div>
+      <div class="s">{{ g.hardware.tier_note }}</div></div>
+    <div class="stat"><div class="k">Memory</div>
+      <div class="v">{{ g.hardware.total_ram_gb or '?' }} GB</div>
+      <div class="s">{{ g.hardware.free_ram_mb or '?' }} MB free now</div></div>
+    <div class="stat"><div class="k">CPU</div>
+      <div class="v">{{ g.hardware.cores or '?' }} threads</div>
+      <div class="s">everything runs on CPU by default</div></div>
+    <div class="stat"><div class="k">GPU</div>
+      {% if g.hardware.gpu %}
+        <div class="v">{{ g.hardware.gpu.vram_gb }} GB</div>
+        <div class="s">{{ g.hardware.gpu.name }}</div>
+      {% else %}
+        <div class="v">None</div><div class="s">CPU-only — the supported baseline</div>
+      {% endif %}</div>
+    <div class="stat"><div class="k">Free disk</div>
+      <div class="v">{{ g.hardware.free_disk_gb or '?' }} GB</div>
+      <div class="s">{{ '%.1f'|format(g.total_disk_mb/1024) }} GB of models installed</div></div>
+  </div>
+
+  <!-- ------------------------------------------------ presets -->
+  <h3>One-click presets</h3>
+  <div class="presets">
+    {% for key, p in g.presets.items() %}
+    <div class="preset {% if key == g.recommended %}rec{% endif %}">
+      <div class="pt">{{ p.label }}
+        {% if key == g.recommended %}<span class="pill">RECOMMENDED</span>{% endif %}</div>
+      <div class="pw">{{ p.why }}</div>
+      <dl>
+        <dt>Transcribe</dt><dd>{{ p.settings.asr_model }}</dd>
+        <dt>Translate</dt><dd>{{ p.settings.translate_engine }}</dd>
+        <dt>Chat</dt><dd>{{ p.settings.chat_llm }}</dd>
+        <dt>Peak RAM</dt><dd>{{ '%.1f'|format(p.budget.peak_mb/1024) }} GB</dd>
+      </dl>
+      {% set cap = (g.hardware.total_ram_gb or 16) * 1024 %}
+      <div class="rambar" title="Processing {{ p.budget.processing_mb }} MB + chat {{ p.budget.chat_mb }} MB of {{ cap|int }} MB">
+        <i class="proc" style="width:{{ (100.0 * p.budget.processing_mb / cap)|round(1) }}%"></i>
+        <i class="chat" style="width:{{ (100.0 * p.budget.chat_mb / cap)|round(1) }}%"></i>
+      </div>
+      {% if p.available %}
+        <button class="{% if key != g.recommended %}ghost{% endif %}"
+                onclick="applyPreset('{{ key }}', this)">Apply</button>
+      {% else %}
+        <button disabled title="Not installed: {{ p.missing|join(', ') }}">Needs {{ p.missing|join(', ') }}</button>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- ------------------------------------------------ the matrix -->
+  <h3>Quality by language</h3>
+  <div class="scroller">
+  <table>
+    <thead>
+      <tr>
+        <th>Model</th>
+        {% for code, L in g.langs.items() %}<th title="{{ L.name }}">{{ L.native }}</th>{% endfor %}
+        <th>Speed</th><th>RAM</th><th>Disk</th><th>Status</th><th>Why / when</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for task, tlabel in g.tasks.items() %}
+        <tr class="group"><td colspan="{{ 6 + g.langs|length }}">{{ tlabel }}</td></tr>
+        {% for r in g.catalog if r.task == task %}
+        <tr>
+          <td><span class="mname">{{ r.name }}</span>{% if r.measured %}<span class="m">measured</span>{% endif %}
+              <div class="meng">{{ r.engine }}</div></td>
+          {% for code in g.langs %}
+            {% set v = r.q.get(code) %}
+            <td>{% if v %}<span class="q q{{ v }}">{{ v }}</span>
+                {% else %}<span class="q qna" title="This model does not support {{ g.langs[code].name }}">—</span>{% endif %}</td>
+          {% endfor %}
+          <td><span class="spark" title="relative speed {{ r.speed }}/5"><i style="width:{{ r.speed * 20 }}%"></i></span></td>
+          <td class="num">{{ r.ram_mb }} MB</td>
+          <td class="num">{{ '%.1f'|format(r.disk_mb/1024) }} GB</td>
+          <td>
+            {% if r.installed %}<span class="badge ok">installed</span>
+            {% else %}<span class="badge no">not installed</span>{% endif %}
+            {% if not r.fits %}<span class="badge warn" title="needs {{ r.min_ram_gb }} GB RAM">tight</span>{% endif %}
+          </td>
+          <td class="why">{{ r.note }}</td>
+        </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+
+  <div class="legend">
+    <span><span class="q q5">5</span> excellent</span>
+    <span><span class="q q4">4</span> good</span>
+    <span><span class="q q3">3</span> usable</span>
+    <span><span class="q q2">2</span> poor</span>
+    <span><span class="q q1">1</span> unusable</span>
+    <span><span class="q qna">—</span> not supported by this model</span>
+  </div>
+
+  <p class="foot">
+    <b>Why Odia has no transcription score.</b> faster-whisper has no Odia token, so no
+    ASR model here can transcribe Odia speech — every ASR row is a dash for
+    {{ g.langs['or'].native }}. Odia is still a first-class output: Marathi or Hindi
+    speech is transcribed, translated by IndicTrans2, then spoken by the Odia voice.
+    That is the common BAIF case — a Marathi field video for an Odia audience.
+    <br><br>
+    <b>Nothing here downloads anything.</b> The Garden reports only what is on this
+    disk. A model shown as “not installed” is present in the FULL package; it is never
+    fetched at runtime.
+  </p>
+</div>
+
+<div id="toast"></div>
+<script>
+function toast(msg, ms) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(window._tt); window._tt = setTimeout(() => t.style.display = 'none', ms || 2600);
+}
+async function applyPreset(name, btn) {
+  const old = btn.textContent; btn.textContent = 'Applying…'; btn.disabled = true;
+  try {
+    const r = await fetch('/api/garden/preset/' + name, { method: 'POST' });
+    const j = await r.json();
+    if (!r.ok) { toast(j.error + ': ' + (j.missing || []).join(', '), 4200); }
+    else { toast('Applied “' + name.replace(/_/g, ' ') + '”. New uploads and chat use it immediately.', 3400); }
+  } catch (e) { toast('Could not apply: ' + e, 4000); }
+  btn.textContent = old; btn.disabled = false;
+}
+</script>
+</body>
+</html>

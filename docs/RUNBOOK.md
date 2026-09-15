@@ -13,8 +13,8 @@ who has never met the build team.
 |---|---|---|---|
 | 1 | Python 3.10+ | `python --version` | Install from python.org, or run from the portable copy on the USB drive |
 | 2 | FFmpeg on PATH | `ffmpeg -version` | `winget install Gyan.FFmpeg`, or copy `ffmpeg.exe` next to `app/` |
-| 3 | Ollama installed + running | `ollama list` | Install from the bundled offline installer, then `ollama serve` |
-| 4 | Chat models pulled | `ollama list` shows `qwen2.5:3b` | `ollama pull qwen2.5:3b` (needs network) **or** import the bundled blobs |
+| 3 | Assistant backend | `AwazSetu-Check.bat` line `Chat LLM backend` | In-process llama.cpp. Nothing to install or start |
+| 4 | Chat weights present | `models\llm\*.gguf` | Shipped in both packages. No pull, no network |
 | 5 | `models/` folder present (~6.3 GB) | `dir models` | Copy from USB — **never** re-download at the venue |
 | 6 | Python deps | `pip install -r requirements.txt` | Use the bundled wheels folder (offline install) |
 | 7 | Pre-processed cache | `app/data/work/` has folders | Copy from USB. **This is the fallback plan** — the demo needs zero processing. |
@@ -35,7 +35,7 @@ Then open <http://127.0.0.1:5000>. Startup is a few seconds; models load lazily 
 ```bat
 python scripts\test_e2e.py assets settings
 ```
-Expect all PASS. Then open one video, switch subtitles hi/mr/en, play a dub, ask one
+Expect all PASS. Then open one video, switch subtitles mr/hi/en/or, play a voiceover, ask one
 chat question. If all four work, the demo is safe.
 
 ---
@@ -51,8 +51,7 @@ pip install -r requirements.txt
 python scripts/download_models.py
 
 # 3. chat model
-ollama pull qwen2.5:3b
-ollama pull qwen2.5:1.5b     # smaller fallback for tight RAM
+REM Nothing to pull. Both assistant models ship as GGUF in models\llm\.
 
 # 4. run — offline from here on
 python app/run.py
@@ -105,7 +104,7 @@ Chat/LLM failures are logged to stderr with *both* the primary and fallback reas
 Code rollback is `git checkout <previous-commit>`; models and data are untouched
 because both are git-ignored.
 
-**Health check.** `/settings` shows a live status panel: free RAM, Ollama up/down and
+**Health check.** `/settings` shows a live status panel: free RAM, assistant backend and
 which models it has, installed Whisper sizes, translation engines, MMS voices.
 
 ---
@@ -114,13 +113,13 @@ which models it has, installed Whisper sizes, translation engines, MMS voices.
 
 | Symptom | Cause | Fix |
 |---|---|---|
-| "The local AI model could not be loaded — not enough free memory" | Ollama could not allocate the model buffer | Close other apps; switch chat LLM to `qwen2.5:1.5b` in Settings; confirm `ollama list` works |
+| "The local AI model could not be loaded — not enough free memory" | The 3B model could not be allocated | Close other apps, or apply the **Fast & low RAM** preset in the Model Garden |
 | Chat answers come back in English when Hindi/Marathi was selected | The translation worker could not load (low RAM) | Free RAM, or lower the ASR/LLM size |
 | "This video does not cover that" for a question you believe is answered | Groundedness guard fired — the fact is not in the transcript, or ASR garbled it | Check the transcript; re-process with a larger ASR model |
 | Subtitles look like nonsense | ASR ran with the wrong model or wrong language | Confirm `asr_model=medium`; press Re-process. Language is auto-detected — check the log line "language auto-detected" |
 | Processing is very slow | CPU-only, beam 5, and every voiceover is built up front | Expected. Processing is a one-time cost per video; playback is then instant. Pre-process before a demo |
 | A voiceover button says "not generated" | That language was not selected when the video was processed | Add it in Settings → Target languages, then press **Re-process** |
-| Ollama not found | Not installed / not on PATH | Install Ollama, then `ollama serve` |
+| Assistant reports no backend | `models\llm\*.gguf` missing from the package | Re-extract the package; the GGUF files are ~2.8 GB and may have been skipped |
 | Player shows no video | `video.mp4` missing in the work folder | Re-upload, or copy the source file in |
 
 ---
@@ -133,10 +132,10 @@ video ──ffmpeg──> audio.wav
              │  language AUTO-DETECTED, domain prompt, beam 5
              ├─ sanitiser: drop degenerate/wrong-script segments
              ├─ glossary: fix known Marathi/Hindi ASR mishears
-             └─ NLLB-200 CT2 INT8 (subprocess) → hi / mr / en
+             └─ IndicTrans2 distilled (subprocess) → hi / mr / en / or
                     ├─ WebVTT subtitle tracks  (player switches live)
                     ├─ MMS-TTS (subprocess)    → dub.<lang>.wav  [ALL languages, now]
-                    └─ manifest.json ──> BM25 index ──> Ollama LLM ──> chat / voice
+                    └─ manifest.json ──> BM25 index ──> llama.cpp LLM ──> chat / voice
 ```
 
 **Everything a viewer consumes is precomputed at save time** — transcript, all

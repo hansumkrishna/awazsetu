@@ -1,89 +1,110 @@
 # AwazSetu
 
-**Understand any video — in your language, out loud — even if you can't read or type. Fully offline.**
+**Understand any video — in your language, out loud — even if you can't read or type.
+Fully offline, with nothing to install.**
 
-An offline desktop app that transcribes, translates and dubs audio / video / text across
-**Hindi · Marathi · English**, with switchable subtitles, on-demand voiceover, and a
-**chat & voice** assistant: ask the video a question (by typing *or speaking*) and hear a
-grounded answer in your language. Everything runs **on-device** on a modest laptop
-(target: Intel i5 / 16 GB RAM) with **zero network calls at runtime**.
+An offline desktop application that transcribes, translates, subtitles and dubs video and
+audio across **Hindi · Marathi · English · Odia**, and lets you *ask the video questions*
+by typing or by speaking, getting a grounded answer in your own language.
+
+Everything runs on-device on a modest laptop (target: Intel i5 11th gen / Ryzen 5,
+16 GB RAM, no GPU) with **zero network calls at runtime** — the process cannot reach a
+network even if one is present.
 
 Built for BAIF · Tech for Good.
 
 ---
 
-## What it does
-- **Transcribe** speech (faster-whisper, INT8).
-- **Translate** across hi/mr/en (NLLB-200 INT8 by default; IndicTrans2 optional).
-- **Switchable subtitles** — flip languages live in the player.
-- **Dub on demand** — hear the video spoken in another language (MMS-TTS).
-- **Chat with the video** — grounded retrieval + a local LLM (qwen2.5 via Ollama).
-- **Voice chat** — tap the mic, ask out loud, hear the answer. The literacy unlock.
-- **Searchable library** — SQLite/local cache; the same source is never processed twice.
+## Run it
 
-## Requirements
+Download a package, extract it, and **double-click `AwazSetu.bat`**.
+
+That is the entire procedure. There is no Python to install, no `pip`, no FFmpeg, no
+Ollama, no PATH to edit, no administrator rights and no internet — even on a freshly
+imaged Windows machine. An embedded Python 3.10 and FFmpeg live in `runtime/`, and every
+model ships in `models/`. Nothing is written outside the folder; deleting the folder
+uninstalls it completely.
+
+Before a demo, double-click **`AwazSetu-Check.bat`**. It verifies the runtime, FFmpeg,
+every model, the assistant (by actually generating an answer), the library and the memory
+budget, then prints READY or names exactly what is wrong.
+
+## What it does
+
 | | |
 |---|---|
-| Python | 3.10+ |
-| FFmpeg | on `PATH` ([gyan.dev](https://www.gyan.dev/ffmpeg/builds/) / `winget install Gyan.FFmpeg`) |
-| Ollama | [ollama.com](https://ollama.com) — for the chat LLM |
-| Disk | ~5 GB for models |
-| RAM | 16 GB recommended (8 GB works with the smaller LLM) |
+| **Transcribe** | faster-whisper INT8, with VAD, language detection and a confidence score |
+| **Translate** | IndicTrans2 (AI4Bharat) — `hi↔mr` and `hi↔or` go direct, with no English pivot |
+| **Subtitles** | four switchable tracks, flipped live in the player |
+| **Voiceover** | a full spoken track per language (MMS-TTS), fitted to the original timings |
+| **Ask the video** | BM25 retrieval + a local LLM that answers *only* from the transcript, and refuses when the fact is absent |
+| **Voice chat** | tap the mic, ask out loud, hear the answer — the literacy unlock |
+| **Model Garden** | every model scored per language and per task against *your* machine, with one-click presets |
 
-No GPU required — everything is CPU + INT8.
+**Everything a viewer consumes is computed once, at ingest, behind a progress bar** — the
+transcript, all four subtitle tracks and all four full-length voiceovers are on disk before
+the item appears in the library. Playback loads no model at all. Only the chat and voice
+assistant run in real time.
 
-## Install
-```bash
-# 1. dependencies (CPU torch keeps it light)
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements.txt
+## Languages
 
-# 2. download all models ONCE (needs internet; ~4–5 GB into ./models/)
-python scripts/download_models.py
-#   add --indictrans2 only if you've run `huggingface-cli login` and want the gated engine
+| | Transcribe | Translate | Subtitles | Voiceover | Chat |
+|---|---|---|---|---|---|
+| Hindi `hi` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Marathi `mr` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| English `en` | ✅ | ✅ | ✅ | ✅ | ✅ |
+| Odia `or` | — | ✅ | ✅ | ✅ | ✅ |
 
-# 3. run — fully offline from here on
-python app/run.py           # -> http://127.0.0.1:5000
-```
-Open the URL, drop in a video, switch subtitle/voiceover languages, and chat or speak to it.
+Odia is a **target** language: no open ASR model can transcribe Odia speech, so Odia is
+produced by translating Hindi or Marathi audio. That is the common BAIF case — a Marathi
+field video for an Odia audience.
 
-Process a video from the command line instead of the UI:
-```bash
-python app/run.py "path/to/video.mp4"
-```
+## Packages
 
-## Offline guarantee
-After `download_models.py`, the app sets `HF_HUB_OFFLINE=1` and loads every model from the
-project's own `models/` folder — **no network access at runtime**. To force a re-download
-(e.g. to add a model), run with `AWAZ_OFFLINE=0`.
+| Build | Contents |
+|---|---|
+| **LITE** | Embedded runtime, FFmpeg, Whisper medium + small, IndicTrans2 (three directions), four voices, both assistant models, and the complete processed library |
+| **FULL** | LITE plus Whisper large-v3, tiny/base, the NLLB fallback engine, and a rescue kit of pinned wheels |
 
-## Settings (operator page)
-The end-user flow is zero-config. Operators get `/settings` to switch models (ASR, mic STT,
-translation engine, chat LLM), pick target languages, tune performance (threads, device,
-beam, memory-saver) and chat/voice behaviour, and see a live status panel (RAM, installed
-models, offline state). It's **select-only** — it never downloads; it switches among what
-`download_models.py` installed. Changing a model applies to new processing; use a video's
-**Re-process** button to re-run it.
-
-## Project layout
-```
-app/                  application code (Flask server, pipeline, workers, templates)
-models/               downloaded weights — NOT in git (see models/README.md)
-scripts/              download_models.py (one-time model fetch)
-generate_deck.py      rebuilds the pitch deck (optional; needs python-pptx)
-requirements.txt
+```bat
+python scripts\package.py both --zip --split 1900
 ```
 
-## Configuration (env vars)
-`AWAZ_MODELS_DIR` · `AWAZ_OFFLINE` (0 to allow downloads) · `AWAZ_MT` (nllb|indictrans2) ·
-`AWAZ_WHISPER` / `AWAZ_MIC_WHISPER` · `AWAZ_LLM` / `AWAZ_LLM_FALLBACK` · `AWAZ_CPU_THREADS` ·
-`AWAZ_DEVICE` (cpu|cuda) — most are also exposed on the Settings page.
+Archives over 1.9 GB are split into parts with SHA-256 checksums and a `JOIN-*.bat` that
+rejoins them, so a bad transfer is caught before the demo rather than during it.
 
-## Notes
-- **Marathi** answers are the weakest leg (small-LLM limitation); Hindi/English are solid.
-  A larger/Indic LLM (e.g. Sarvam-1) is the roadmap fix.
-- **IndicTrans2** gives higher Indic translation quality but is a gated model — NLLB is the
-  self-sufficient, login-free default.
+## Developing
 
-## License
-Open-source components retain their own licenses. Provided as-is for the BAIF hackathon.
+```bat
+python -m pip install -r requirements-pinned.txt
+python app\run.py                 REM serve at http://127.0.0.1:5000
+python app\run.py <media-file>    REM process one file
+python scripts\doctor.py          REM preflight
+python scripts\test_e2e.py        REM the acceptance suite
+python scripts\reprocess_all.py   REM rebuild the library at full quality
+python scripts\build_docpack.py --pdf
+```
+
+`requirements-pinned.txt` holds the exact versions the bundled runtime ships. They are
+pinned, not resolved: a floating resolve drifts to numpy 2.x, which is an ABI break for
+CTranslate2 and torch builds compiled against 1.x.
+
+## Architecture
+
+```
+media ─▶ FFmpeg 16 kHz ─▶ faster-whisper ─▶ sanitiser + glossary ─▶ IndicTrans2
+                                                                        │
+                            work/<sha256>/ ◀── MMS-TTS ×4 ◀── WebVTT ×4 ┘
+                                   │
+                 Flask 127.0.0.1 ──┴── player · BM25 + llama.cpp assistant
+```
+
+Work folders are keyed by SHA-256 of the source, so re-adding the same file is idempotent
+and URLs stay stable. Every heavy model runs in its own subprocess, so a native crash
+degrades one feature rather than the application.
+
+## Documentation
+
+`docs/` holds the runbook, handover and training plan, test evidence, the delivery plan and
+the comparison against Bhashini. The BAIF submission pack is generated from the live system
+by `scripts/build_docpack.py` — every figure in it is read from the repository, not typed in.

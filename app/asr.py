@@ -24,8 +24,9 @@ LOW_CONF = float(os.environ.get("AWAZ_ASR_LOW_CONF", "-1.0"))
 
 def extract_audio(video_path: str, out_wav: str, sr: int = 16000) -> str:
     os.makedirs(os.path.dirname(out_wav), exist_ok=True)
+    from config import ffmpeg_exe
     subprocess.run(
-        ["ffmpeg", "-y", "-i", video_path, "-vn", "-ac", "1", "-ar", str(sr),
+        [ffmpeg_exe(), "-y", "-i", video_path, "-vn", "-ac", "1", "-ar", str(sr),
          "-c:a", "pcm_s16le", out_wav],
         check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     return out_wav
@@ -88,8 +89,12 @@ class WhisperASR:
         size = size or os.environ.get("AWAZ_WHISPER", "small")
         self.device = (device or os.environ.get("AWAZ_DEVICE")
                        or ("cuda" if torch.cuda.is_available() else "cpu"))
-        # int8 keeps it inside the i5/16GB budget on the target machine
-        compute = "float16" if self.device == "cuda" else "int8"
+        # int8 keeps it inside the i5/16GB budget on the target machine.
+        # On CUDA, plain float16 OOMs large-v3 on a 4 GB laptop GPU (measured);
+        # int8_float16 loads in 6.9 s and decodes at RTF 0.71 on the same card,
+        # so it is the default and AWAZ_COMPUTE can override for bigger GPUs.
+        compute = os.environ.get("AWAZ_COMPUTE") or (
+            "int8_float16" if self.device == "cuda" else "int8")
         threads = int(os.environ.get("AWAZ_CPU_THREADS", "0")) or max(4, (os.cpu_count() or 8) // 2)
         self.model = WhisperModel(size, device=self.device, compute_type=compute,
                                   cpu_threads=threads, num_workers=1)

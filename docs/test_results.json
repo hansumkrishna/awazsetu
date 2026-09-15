@@ -1,0 +1,98 @@
+[
+ {
+  "suite": "platform",
+  "case": "ffmpeg_resolves",
+  "lang": "-",
+  "ok": true,
+  "detail": "bundled: ffmpeg version 7.1.1-essentials_build-www.gy",
+  "secs": 0.0
+ },
+ {
+  "suite": "platform",
+  "case": "embedded_runtime",
+  "lang": "-",
+  "ok": true,
+  "detail": "3.10.11 2.5.1+cpu",
+  "secs": 3.0
+ },
+ {
+  "suite": "platform",
+  "case": "llm_answers",
+  "lang": "-",
+  "ok": true,
+  "detail": "backend=llamacpp model=qwen2.5:3b -> '12 goats.'",
+  "secs": 6.0
+ },
+ {
+  "suite": "platform",
+  "case": "offline_enforced",
+  "lang": "-",
+  "ok": true,
+  "detail": "HF_HUB_OFFLINE=1",
+  "secs": null
+ },
+ {
+  "suite": "platform",
+  "case": "garden_catalog",
+  "lang": "-",
+  "ok": true,
+  "detail": "13 models, tasks=['asr', 'llm', 'mt', 'tts'], tier=workstation, presets=4",
+  "secs": 2.1
+ },
+ {
+  "suite": "platform",
+  "case": "presets_honest",
+  "lang": "-",
+  "ok": true,
+  "detail": "every preset's availability matches what is installed",
+  "secs": 0.1
+ },
+ {
+  "suite": "platform",
+  "case": "odia_not_a_source",
+  "lang": "or",
+  "ok": true,
+  "detail": "langs.py records Odia as target-only; no ASR model claims to read it",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "audio_sources_processed",
+  "lang": "-",
+  "ok": true,
+  "detail": "4 audio item(s), 11 video item(s)",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "source_file_present",
+  "lang": "-",
+  "ok": true,
+  "detail": "every manifest points at a real source container",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "odia_subtitles",
+  "lang": "or",
+  "ok": false,
+  "detail": "7/8 items with an Odia target have an Odia track",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "odia_voiceover",
+  "lang": "or",
+  "ok": false,
+  "detail": "7/8 items have an audible Odia voiceover",
+  "secs": null
+ },
+ {
+  "suite": "media",
+  "case": "no_subtitleless_items",
+  "lang": "-",
+  "ok": false,
+  "detail": "items with no subtitles at all: ['6758e814']",
+  "secs": null
+ }
+]

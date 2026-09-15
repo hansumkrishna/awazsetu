@@ -15,6 +15,8 @@ import soundfile as sf
 os.environ.setdefault("CUDA_VISIBLE_DEVICES", "")  # CPU-only; safe when spawned from a torch parent
 import torch
 from transformers import VitsModel, AutoTokenizer
+from transformers import logging as _hflog
+_hflog.set_verbosity_error()   # see the weight-norm note below
 
 import sys as _s, os as _o
 _s.path.insert(0, _o.path.dirname(_o.path.abspath(__file__)))
@@ -78,6 +80,13 @@ def synth_text(model, tok, text, np, torch):
 
 
 
+# NOTE on a misleading warning. Loading any MMS-TTS voice prints
+#   "Some weights ... were not used: ...weight_g/.weight_v"
+#   "Some weights ... newly initialized: ...parametrizations.weight.original0/1"
+# because torch >= 2.1 renamed weight-norm parameters. It reads like the WaveNet
+# layers got random values, but transformers performs the rename on load: all 128
+# tensors were verified equal to the checkpoint, and synthesis is bit-identical with
+# and without a manual remap. The warning is cosmetic — do not "fix" it.
 def _load_tts(repo):
     """Load an MMS-TTS voice, working around the Marathi tokenizer config.
 

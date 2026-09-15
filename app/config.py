@@ -112,6 +112,36 @@ def whisper_installed() -> list[str]:
             if _hub(f"models--Systran--faster-whisper-{s}")]
 
 
+def _bin_dir() -> str:
+    """Bundled binaries that ship with the package (runtime/bin/)."""
+    return os.environ.get("AWAZ_BIN_DIR") or os.path.join(
+        os.path.dirname(HERE), "runtime", "bin")
+
+
+def _tool(name: str) -> str:
+    """Resolve an external binary: bundled copy first, then PATH.
+
+    Bundled wins deliberately. Requiring FFmpeg on PATH meant a manual `setx PATH`
+    during install, and PATH edits only apply to NEW shells — the most common
+    "ffmpeg is not recognised" support call. A bundled binary needs no install step
+    and cannot be shadowed by an unrelated FFmpeg already on the machine.
+    """
+    import shutil
+    exe = name + (".exe" if os.name == "nt" else "")
+    local = os.path.join(_bin_dir(), exe)
+    if os.path.exists(local):
+        return local
+    return shutil.which(name) or name
+
+
+def ffmpeg_exe() -> str:
+    return _tool("ffmpeg")
+
+
+def ffprobe_exe() -> str:
+    return _tool("ffprobe")
+
+
 def ollama_exe() -> str:
     """Locate the ollama binary portably (PATH first, then the standard per-user
     install dir via LOCALAPPDATA / HOME — no hardcoded username)."""
@@ -234,13 +264,13 @@ MODEL_GUIDE = {
         "medium":   {"en": 5, "hi": 4, "mr": 4, "speed": 3, "ram_mb": 1600,
                      "note": "RECOMMENDED. Measured RTF 0.32 on GPU; produced meaningful Marathi."},
         "large-v3": {"en": 5, "hi": 5, "mr": 5, "speed": 1, "ram_mb": 3200,
-                     "note": "Best accuracy, but CUDA-OOMs on a 4 GB GPU and is very slow on CPU."},
+                     "note": "Best accuracy. Measured on a 4 GB GPU at int8_float16: RTF 0.49. Needs one process per item — a shared CUDA context exhausts 4 GB."},
     },
     "mt": {
         "nllb":        {"en": 4, "hi": 4, "mr": 3, "speed": 4, "ram_mb": 700,
-                        "note": "DEFAULT. Ungated, no login, covers every hi/mr/en direction."},
+                        "note": "Fallback. Smaller and faster, but measured to mistranslate domain terms. See the Model Garden."},
         "indictrans2": {"en": 5, "hi": 5, "mr": 5, "speed": 3, "ram_mb": 1200,
-                        "note": "Best Indic quality, but HF-gated — needs huggingface-cli login."},
+                        "note": "DEFAULT. Best Indic quality; installed and working offline, no login needed."},
     },
     "llm": {
         "qwen2.5:1.5b": {"en": 3, "hi": 2, "mr": 2, "speed": 5, "ram_mb": 1400,

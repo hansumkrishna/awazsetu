@@ -1,0 +1,27 @@
+# AwazSetu — EXACT versions the bundled runtime ships.
+#
+# These are the versions this project has actually been run and validated on, not
+# "latest compatible". The pre-existing offline_kit/wheels set was resolved with
+# floating ranges and drifted to numpy 2.2.6 / torch 2.14.0 / transformers 4.45.2 —
+# a combination nobody has ever built an environment from, and numpy 2.x is an ABI
+# break for CTranslate2 and torch builds compiled against 1.x. Pin, don't resolve.
+#
+# torch is the CPU wheel: the target laptop (i5/Ryzen 5, 16 GB, no dGPU) cannot use
+# CUDA, and the CPU build is ~200 MB instead of multiple GB.
+
+torch==2.5.1
+numpy==1.26.4
+transformers==4.44.2
+ctranslate2==4.8.0
+faster-whisper==1.2.1
+sentencepiece==0.2.0
+soundfile==0.12.1
+flask==3.0.1
+rank-bm25==0.2.2
+huggingface-hub==0.36.2
+accelerate==1.14.0
+psutil==5.9.0
+
+# Chat + voice LLM, in-process. Replaces the Ollama install entirely: it loads the
+# same GGUF weights the Ollama blobs already contain.
+llama-cpp-python==0.3.35

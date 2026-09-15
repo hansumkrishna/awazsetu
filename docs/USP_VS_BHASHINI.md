@@ -11,9 +11,9 @@ Bhashini is very good at what it does, and we say where it beats us.
 | | **Bhashini** | **AwazSetu** |
 |---|---|---|
 | Nature | National **cloud API** platform (MeitY / ULCA) for Indian-language AI | **On-device application** for understanding a *video* end to end |
-| Unit of work | A translation / ASR / TTS **API call** | A **video**: transcript → 3 languages → subtitles → dub → Q&A |
+| Unit of work | A translation / ASR / TTS **API call** | A **video**: transcript → 4 languages → subtitles → voiceover → Q&A |
 | Where it runs | Government cloud, over the internet | The operator's own laptop, **zero network at runtime** |
-| Languages | 22 scheduled Indian languages | Hindi, Marathi, English today (Whisper + NLLB cover far more; only these three are tuned and tested) |
+| Languages | 22 scheduled Indian languages | Hindi, Marathi, English, Odia today (Whisper + IndicTrans2 cover far more; only these four are tuned and tested) |
 | Integration | You build an app on top of it | It **is** the app — a field worker opens a browser and uses it |
 
 **The honest framing:** Bhashini is *infrastructure*. AwazSetu is a *product* that
@@ -29,7 +29,7 @@ could, in principle, call Bhashini. We chose not to, and section 3 is why.
 | **Data egress** | Audio/transcript leaves the device to a third-party cloud | **Nothing leaves the laptop** | Farmer interviews, beneficiary names and field data stay on-premises. No DPDP data-transfer question to answer |
 | **Marginal cost** | Per-call (free tier today; unpriced risk at scale) | **₹0 per video, forever.** One-time ~6 GB download | 500 videos/year costs the same as 5 |
 | **Latency dependence** | Network round-trip per segment; a 6-min video = dozens of calls | Local; no round-trips | No failure mode where the demo dies because the venue Wi-Fi did |
-| **Video-native workflow** | Returns text; subtitles/dub/QA are yours to build | Subtitles, on-demand dub, jump-to-timestamp, chat and **voice** chat are the product | The whole journey, not a building block |
+| **Video-native workflow** | Returns text; subtitles/dub/QA are yours to build | Subtitles, precomputed voiceover, jump-to-timestamp, chat and **voice** chat are the product | The whole journey, not a building block |
 | **Domain adaptation** | General-purpose models | **Editable glossary** (`glossary.json`): ASR mishear corrections + agri term table, fed into the ASR prompt *and* the chat prompt | Measured: fixed शेडि→शेळी, सरवत्तम→सर्वोत्तम on real BAIF video |
 | **Literacy access** | Text in, text out | **Voice in, voice out** in Hindi/Marathi | The farmer who cannot read or type can still use it |
 | **Groundedness** | N/A (not a QA system) | Answers restricted to the transcript; refuses with "not covered" + closest lines | No confident fabrication in front of a beneficiary |
@@ -41,7 +41,7 @@ could, in principle, call Bhashini. We chose not to, and section 3 is why.
 
 | Dimension | Reality |
 |---|---|
-| **Raw translation quality** | Bhashini's Indic models (IndicTrans2 family) are **better than our default NLLB-200-600M INT8**, especially Marathi. We quantised to fit 16 GB; they run full-precision on servers. |
+| **Raw translation quality** | We now run the **same IndicTrans2 family** Bhashini uses, distilled to fit 16 GB. They run full-precision on servers, so on the hardest sentences they retain an edge. |
 | **Language coverage** | 22 languages vs our 3. Adding a language is a config change for them, a test-and-tune cycle for us. |
 | **ASR on hard audio** | Server-side models are larger than the `medium` Whisper we can fit. Our Marathi WER on noisy field audio is visibly worse. |
 | **Maintenance** | They patch models centrally; ours are pinned files an operator must update deliberately. |
@@ -50,7 +50,7 @@ could, in principle, call Bhashini. We chose not to, and section 3 is why.
 
 **We could use IndicTrans2 to close most of the quality gap** — it is supported in the
 codebase today (`AWAZ_MT=indictrans2`) but the weights are HF-gated, so the login-free
-default is NLLB. That is a deliberate trade of quality for zero-setup reproducibility.
+default is now IndicTrans2, measured markedly better for hi/mr/or than the NLLB fallback.
 
 ---
 
@@ -67,7 +67,7 @@ Benchmarked on a 90-second Marathi slice of *401.2 Housing of Goat*:
 Full pipeline, per video (≈6 min source, GPU): **~165–185 s total** —
 ASR ~95–110 s, translation to 2 languages ~47 s, subtitles + manifest <1 s.
 
-Language detection on all 8 BAIF videos: **Marathi, p = 0.95–0.99.**
+Language detection across the BAIF videos: **Marathi, p = 0.95–1.00.**
 
 > Honest caveat about these numbers: they were produced with GPU acceleration on the
 > development machine. The BAIF target (i5, no discrete GPU) runs the **same models**
@@ -86,7 +86,7 @@ Language detection on all 8 BAIF videos: **Marathi, p = 0.95–0.99.**
 - The audience includes people who cannot read or type.
 
 **Choose Bhashini when:**
-- You need many Indian languages beyond hi/mr/en.
+- You need many Indian languages beyond hi/mr/en/or.
 - Maximum translation accuracy matters more than connectivity or privacy.
 - You are adding a translate button to an existing connected web app.
 - The device is thin (a phone or low-spec terminal).

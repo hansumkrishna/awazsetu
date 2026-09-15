@@ -99,7 +99,8 @@ def do_stt(audio_in: str, lang: str, out_json: str):
     import subprocess
     from faster_whisper import WhisperModel
     wav = audio_in + ".wav"
-    subprocess.run(["ffmpeg", "-y", "-i", audio_in, "-vn", "-ac", "1", "-ar",
+    from config import ffmpeg_exe
+    subprocess.run([ffmpeg_exe(), "-y", "-i", audio_in, "-vn", "-ac", "1", "-ar",
                     "16000", "-c:a", "pcm_s16le", wav],
                    check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     # Mic clips are short -> a LIGHT model is enough and, crucially, fits in RAM

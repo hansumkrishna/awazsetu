@@ -44,5 +44,12 @@ desktop.ini
 /Videos.zip
 /test_videos/
 
+# --- bundled zero-install runtime (embedded Python + ffmpeg, ~1.8 GB) ---
+/runtime/
+
+# --- supplied media staged for processing ---
+/new_media/
+/final submission.jpeg
+
 # --- built distribution packages ---
 /dist/

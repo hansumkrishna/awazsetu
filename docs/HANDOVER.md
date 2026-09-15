@@ -69,7 +69,9 @@ language. This is designed for users who cannot read or type.
 | `app/pipeline.py` | One video end to end: extract → detect language → ASR → sanitise → glossary → translate → subtitles |
 | `app/asr.py` | Whisper wrapper + **language detection, repetition guard, garbage sanitiser, confidence scoring** |
 | `app/mt.py`, `translate_worker.py`, `indictrans_worker.py` | Translation engines (subprocess-isolated) |
-| `app/chat.py` | Grounded RAG: BM25 + Ollama, **refusal guard**, per-language UI strings |
+| `app/chat.py` | Grounded RAG: BM25 + `app/llm.py`, **refusal guard**, per-language UI strings |
+| `app/llm.py` | Assistant backend: in-process llama.cpp (default) or Ollama if already present |
+| `app/garden.py` | Model Garden: catalogue, hardware probe, RAM budgeting, presets |
 | `app/voice_worker.py` | Mic STT + spoken answers |
 | `app/dub_worker.py` | MMS-TTS voiceover, timestamp-aligned, chunked |
 | `app/config.py` | Settings store, env bridge, system status, **per-language model guidance** |
@@ -92,11 +94,11 @@ After editing, press **Re-process** on a video to apply it.
 
 ### Extending it
 - **A new language:** add it to `langs` in Settings, add an `asr_prompts` entry, and
-  confirm an MMS-TTS voice exists for it. Whisper and NLLB already cover many more.
+  confirm an MMS-TTS voice exists for it. Whisper and IndicTrans2 already cover many more.
 - **Better Indic translation:** `huggingface-cli login`, accept the IndicTrans2 terms,
   then set the engine to `indictrans2` in Settings.
 - **Better Marathi answers:** swap the chat LLM for a stronger Indic model (e.g. Sarvam-1)
-  in Ollama; it appears in the Settings dropdown automatically.
+  in `models/llm/` as a GGUF; it appears in the Settings dropdown automatically.
 - **A new domain** (dairy, horticulture): replace the `asr_prompts` sentence and the
   `terms` table. No retraining required.
 
@@ -131,6 +133,6 @@ mis-transcription via the glossary, and run the test suite to prove nothing brok
 | Marathi ASR on noisy field audio is imperfect | Some subtitle lines will be wrong | Glossary corrections; confidence warning shown; a larger model is a Settings change |
 | Chat LLM is 3B (fits 16 GB) | Reasoning is shallow vs a cloud model; Marathi phrasing is the weakest | Answers are grounded and refuse when unsure; Sarvam-1 is the roadmap fix |
 | Dub is timestamp-aligned, not lip-synced | Voiceover does not match mouth movement | Acceptable for training content; isochronic fitting already limits drift |
-| Three languages tuned (hi/mr/en) | Other Indian languages untested | Whisper + NLLB cover far more; each needs a tune-and-test cycle |
+| Four languages tuned (hi/mr/en/or) | Other Indian languages untested | Whisper + IndicTrans2 cover far more; each needs a tune-and-test cycle |
 | Processing is CPU-bound (~2–3× realtime on an i5) | A 10-min video takes ~20–30 min first time | Pre-process in advance; the cache makes playback instant |
 | No document (docx/pptx) translation yet | Text files must go through another tool | Deliberately deferred; the pipeline is text-agnostic and could accept it |

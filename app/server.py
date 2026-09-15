@@ -191,14 +191,18 @@ def voice_chat(vid: str):
     # Memory-saver: free RAM before the STT model loads (tight machines) by unloading
     # the resident LLM; chat.answer() reloads it a moment later. Toggle in Settings.
     if os.environ.get("AWAZ_VOICE_UNLOAD", "true").lower() == "true":
-        for m_ in (os.environ.get("AWAZ_LLM", "qwen2.5:3b"),
-                   os.environ.get("AWAZ_LLM_FALLBACK", "qwen2.5:1.5b")):
-            try:
+        try:
+            import llm as _llm
+            if _llm.backend() == "llamacpp":
+                _llm.unload()          # in-process: just drop the reference
+            else:
                 import config as _c
-                subprocess.run([_c.ollama_exe(), "stop", m_], timeout=15,
-                               capture_output=True)
-            except Exception:
-                pass
+                for m_ in (os.environ.get("AWAZ_LLM", "qwen2.5:3b"),
+                           os.environ.get("AWAZ_LLM_FALLBACK", "qwen2.5:1.5b")):
+                    subprocess.run([_c.ollama_exe(), "stop", m_], timeout=15,
+                                   capture_output=True)
+        except Exception:
+            pass
 
     # 1) speech -> text
     stt_out = os.path.join(work, "voice_q.json")
@@ -284,7 +288,7 @@ def export_mkv(vid: str):
     if not os.path.exists(out):
         subs = [L for L in m["langs"] if os.path.exists(os.path.join(work, f"subs.{L}.vtt"))]
         dubs = [L for L in m["langs"] if os.path.exists(os.path.join(work, f"dub.{L}.wav"))]
-        cmd = ["ffmpeg", "-y", "-i", os.path.join(work, _media_name(vid))]
+        cmd = [_c.ffmpeg_exe(), "-y", "-i", os.path.join(work, _media_name(vid))]
         for L in subs:
             cmd += ["-i", os.path.join(work, f"subs.{L}.vtt")]
         for L in dubs:
@@ -321,6 +325,39 @@ def api_settings():
             patch["langs"] = [x for x in patch["langs"].split(",") if x]
         return jsonify(config.save(patch))
     return jsonify({"settings": config.load(), "status": config.status()})
+
+
+@app.route("/garden")
+def garden_page():
+    """Model Garden — every model scored per language, per task, against THIS machine."""
+    import garden
+    import config
+    return render_template("garden.html", g=garden.overview(), s=config.load())
+
+
+@app.route("/api/garden")
+def api_garden():
+    import garden
+    return jsonify(garden.overview())
+
+
+@app.route("/api/garden/preset/<name>", methods=["POST"])
+def api_garden_preset(name: str):
+    """Apply a named preset. Refuses one whose models are not installed rather than
+    writing a setting that would fail at the next upload."""
+    import garden
+    import config
+    p = garden.PRESETS.get(name)
+    if not p:
+        abort(404)
+    have = garden.installed_ids()
+    need = set(p["settings"][k] for k in ("asr_model", "mic_model",
+                                          "translate_engine", "chat_llm"))
+    missing = sorted(need - have)
+    if missing:
+        return jsonify({"error": "preset needs models that are not installed",
+                        "missing": missing}), 409
+    return jsonify({"applied": name, "settings": config.save(dict(p["settings"]))})
 
 
 @app.route("/reprocess/<vid>", methods=["POST"])

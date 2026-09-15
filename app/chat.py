@@ -1,7 +1,8 @@
 """AwazSetu — chat with the video.
 
 RAG grounded strictly in the transcript: BM25 retrieval (zero-download, RAM-light)
-+ a small local LLM via Ollama. The LLM is only reached in chat mode, so its memory
++ a small local LLM (llm.py: in-process llama.cpp, or Ollama if this machine
+already runs it). The LLM is only reached in chat mode, so its memory
 is never co-resident with ASR/MT (staged loading).
 
     from chat import answer
@@ -20,9 +21,6 @@ from __future__ import annotations
 import os
 import re
 import json
-import urllib.request
-
-OLLAMA = os.environ.get("OLLAMA_URL", "http://127.0.0.1:11434")
 # Read at CALL time (not import time) so the Settings page actually switches models
 # without restarting the server.
 def _model() -> str:
@@ -87,38 +85,25 @@ def _retrieve(m: dict, q: str, k: int = 5) -> tuple[list[dict], float]:
     return [segs[i] for i in sorted(hits)], best
 
 
-def _ollama_call(model: str, system: str, user: str) -> str:
-    body = json.dumps({
-        "model": model, "stream": False,
-        "messages": [{"role": "system", "content": system},
-                     {"role": "user", "content": user}],
-        "options": {"temperature": float(os.environ.get("AWAZ_LLM_TEMP", "0.2")),
-                    "num_ctx": int(os.environ.get("AWAZ_LLM_CTX", "8192")),
-                    "num_gpu": int(os.environ.get("AWAZ_LLM_GPU", "0"))},
-    }).encode()
-    req = urllib.request.Request(OLLAMA + "/api/chat", data=body,
-                                 headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=180) as r:
-        j = json.loads(r.read())
-    if "message" not in j:
-        raise RuntimeError(str(j.get("error") or "ollama returned no message"))
-    return j["message"]["content"].strip()
-
-
 def _describe(e: Exception) -> str:
     """Exceptions with an empty str() produced the infamous '[LLM error: ]'."""
     return f"{type(e).__name__}: {e}" if str(e).strip() else type(e).__name__
 
 
-def _ollama_chat(system: str, user: str) -> str:
-    """Try the primary model, then the smaller fallback. Raise with BOTH reasons."""
+def _llm_chat(system: str, user: str) -> str:
+    """Try the primary model, then the smaller fallback. Raise with BOTH reasons.
+
+    The backend (in-process llama.cpp, or Ollama when this machine already runs it)
+    is chosen in llm.py; nothing here depends on which one answered.
+    """
+    import llm
     try:
         primary = _model()
-        return _ollama_call(primary, system, user)
+        return llm.call(primary, system, user)
     except Exception as e1:
         try:
             fb = _fallback()
-            return _ollama_call(fb, system, user)
+            return llm.call(fb, system, user)
         except Exception as e2:
             raise RuntimeError(
                 f"{_model()} -> {_describe(e1)} | {_fallback()} -> {_describe(e2)}") from e2
@@ -235,7 +220,7 @@ def answer(m: dict, q: str, lang: str = "hi", history: list | None = None) -> di
 
     grounded, llm_ok = True, True
     try:
-        ans_en = _ollama_chat(system, user)
+        ans_en = _llm_chat(system, user)
     except Exception as e:
         llm_ok, grounded = False, False
         ans_en = ""

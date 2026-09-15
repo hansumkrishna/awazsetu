@@ -21,6 +21,20 @@ import torch
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
 from langs import FLORES  # single source of truth for language codes
+
+# IndicTrans2 direction routing, mirroring indictrans_worker.route(). Kept here so
+# callers can group targets that share a checkpoint into one worker process.
+_INDIC = {k for k in FLORES if k != "en"}
+
+
+def _route(src: str, tgt: str) -> str:
+    if src in _INDIC and tgt == "en":
+        return "indic-en"
+    if src == "en" and tgt in _INDIC:
+        return "en-indic"
+    if src in _INDIC and tgt in _INDIC:
+        return "indic-indic"
+    raise ValueError(f"unsupported {src}->{tgt}")
 INDIC = {"hi", "mr"}
 
 
@@ -208,7 +222,11 @@ class IndicWorkerMT:
     NAME = "indictrans2-dist"
 
     def __init__(self, device: str | None = None):
-        self.threads = int(os.environ.get("AWAZ_CPU_THREADS", "4"))
+        # 0 ("auto" in settings) must not collapse to a single thread: leave one core
+        # for the OS and give the rest to the translator, which is the slowest stage.
+        n = int(os.environ.get("AWAZ_CPU_THREADS", "0"))
+        self.threads = n or max(4, (os.cpu_count() or 8) - 4)
+        self.batch = int(os.environ.get("AWAZ_MT_BATCH", "8"))
         self.device = "cpu"
 
     def translate_multi(self, sentences: list[str], src: str,
@@ -218,17 +236,24 @@ class IndicWorkerMT:
         import sys
         worker = os.path.join(os.path.dirname(__file__), "indictrans_worker.py")
         res: dict = {}
-        # One subprocess PER target -> one custom model per process. Loading two
-        # trust_remote_code IndicTrans2 models in one process segfaults.
+        # One subprocess per ROUTE, not per target. The constraint is that two
+        # DIFFERENT trust_remote_code checkpoints cannot share a process (segfault) —
+        # several targets served by the SAME checkpoint can, and the worker already
+        # caches by route. mr->hi and mr->or are both indic-indic, so grouping loads
+        # that 320M model once per item instead of once per language.
+        groups: dict[str, list[str]] = {}
         for tgt in targets:
             if tgt == src:
                 res[tgt] = list(sentences)
                 continue
+            groups.setdefault(_route(src, tgt), []).append(tgt)
+        for _r, tgts in groups.items():
             with tempfile.TemporaryDirectory() as d:
                 jf, of = os.path.join(d, "j.json"), os.path.join(d, "o.json")
                 with open(jf, "w", encoding="utf-8") as f:
-                    json.dump({"src": src, "targets": [tgt], "sentences": list(sentences),
-                               "threads": self.threads}, f, ensure_ascii=False)
+                    json.dump({"src": src, "targets": tgts, "sentences": list(sentences),
+                               "threads": self.threads, "batch": self.batch},
+                              f, ensure_ascii=False)
                 subprocess.run([sys.executable, worker, jf, of], check=True)
                 with open(of, encoding="utf-8") as f:
                     res.update(json.load(f))
