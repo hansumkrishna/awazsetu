@@ -73,6 +73,14 @@
   .why { color:var(--mut); font-size:12.5px; white-space:normal; line-height:1.5; max-width:460px; }
   .m { font-size:10px; color:#8a6412; background:#fdf5e7; border:1px solid #efdcb4;
        border-radius:4px; padding:1px 5px; margin-left:6px; vertical-align:1px; }
+  table.best td { vertical-align:top; }
+  table.best .tk { font-weight:600; color:#444; white-space:nowrap; }
+  table.best .lc { color:var(--mut); font-weight:400; text-transform:none; letter-spacing:0; }
+  .pick { font-weight:600; font-size:13px; }
+  .pick.none { color:var(--mut); font-weight:500; }
+  .pwhy { color:var(--mut); font-size:11.5px; margin-top:2px; white-space:normal; max-width:200px; line-height:1.4; }
+  .lic { font-size:11px; color:#555; white-space:nowrap; }
+  .lic.nc { color:#8a6412; }
   .legend { display:flex; flex-wrap:wrap; gap:14px; align-items:center; font-size:12px;
             color:var(--mut); margin-top:10px; }
   .legend .q { width:26px; }
@@ -121,6 +129,43 @@
       <div class="s">{{ '%.1f'|format(g.total_disk_mb/1024) }} GB of models installed</div></div>
   </div>
 
+  <!-- ------------------------------------------------ the preference matrix -->
+  <h3>What to use — for this machine</h3>
+  <div class="scroller">
+  <table class="best">
+    <thead><tr><th>Task</th>
+      {% for code, L in g.langs.items() %}<th>{{ L.native }} <span class="lc">{{ L.name }}</span></th>{% endfor %}
+    </tr></thead>
+    <tbody>
+      {% for task, tlabel in g.tasks.items() %}
+      <tr>
+        <td class="tk">{{ tlabel }}</td>
+        {% for code in g.langs %}
+          {% set b = g.best[task][code] %}
+          <td>
+            {% if b.id %}
+              <div class="pick">{{ b.name }}</div>
+              <div class="pwhy">{{ b.why }}</div>
+            {% else %}
+              <div class="pick none">— {{ b.why }}</div>
+              {% if code == 'or' and task == 'asr' %}
+                <div class="pwhy">reached through translation instead</div>
+              {% endif %}
+            {% endif %}
+          </td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <p class="small" style="color:var(--mut);font-size:12.5px;margin-top:8px">
+    Ranked by quality first, then speed, then memory — and only among models that are
+    <b>installed and fit this machine</b>, so the answer is actionable rather than
+    aspirational. Where two models are equally good, the faster one wins: that is why
+    English transcription picks <code>medium</code> over <code>large-v3</code>.
+  </p>
+
   <!-- ------------------------------------------------ presets -->
   <h3>One-click presets</h3>
   <div class="presets">
@@ -158,12 +203,12 @@
       <tr>
         <th>Model</th>
         {% for code, L in g.langs.items() %}<th title="{{ L.name }}">{{ L.native }}</th>{% endfor %}
-        <th>Speed</th><th>RAM</th><th>Disk</th><th>Status</th><th>Why / when</th>
+        <th>Speed</th><th>RAM</th><th>Disk</th><th>Load</th><th>Licence</th><th>Status</th><th>Why / when</th>
       </tr>
     </thead>
     <tbody>
       {% for task, tlabel in g.tasks.items() %}
-        <tr class="group"><td colspan="{{ 6 + g.langs|length }}">{{ tlabel }}</td></tr>
+        <tr class="group"><td colspan="{{ 8 + g.langs|length }}">{{ tlabel }}</td></tr>
         {% for r in g.catalog if r.task == task %}
         <tr>
           <td><span class="mname">{{ r.name }}</span>{% if r.measured %}<span class="m">measured</span>{% endif %}
@@ -176,6 +221,8 @@
           <td><span class="spark" title="relative speed {{ r.speed }}/5"><i style="width:{{ r.speed * 20 }}%"></i></span></td>
           <td class="num">{{ r.ram_mb }} MB</td>
           <td class="num">{{ '%.1f'|format(r.disk_mb/1024) }} GB</td>
+          <td class="num">{{ r.load_s }} s</td>
+          <td><span class="lic {% if 'NC' in r.licence %}nc{% endif %}">{{ r.licence }}</span></td>
           <td>
             {% if r.installed %}<span class="badge ok">installed</span>
             {% else %}<span class="badge no">not installed</span>{% endif %}

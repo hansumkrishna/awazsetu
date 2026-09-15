@@ -45,24 +45,24 @@ TIERS = {
 
 CATALOG = [
     # ---------------------------------------------------------------- ASR
-    {"id": "tiny", "task": "asr", "name": "Whisper tiny", "engine": "faster-whisper INT8",
+    {"id": "tiny", "task": "asr", "licence": "MIT", "load_s": 1.2, "name": "Whisper tiny", "engine": "faster-whisper INT8",
      "q": {"en": 2, "hi": 1, "mr": 1, "or": None}, "speed": 5, "ram_mb": 150, "disk_mb": 75,
      "min_ram_gb": 4, "measured": False,
      "note": "Fastest by far, but Latin-script only in practice. Do not use for Indic."},
-    {"id": "base", "task": "asr", "name": "Whisper base", "engine": "faster-whisper INT8",
+    {"id": "base", "task": "asr", "licence": "MIT", "load_s": 1.8, "name": "Whisper base", "engine": "faster-whisper INT8",
      "q": {"en": 3, "hi": 2, "mr": 1, "or": None}, "speed": 5, "ram_mb": 250, "disk_mb": 142,
      "min_ram_gb": 4, "measured": True,
      "note": "Measured: transcribed Hindi speech into Urdu script. Avoid for Indic."},
-    {"id": "small", "task": "asr", "name": "Whisper small", "engine": "faster-whisper INT8",
+    {"id": "small", "task": "asr", "licence": "MIT", "load_s": 3.0, "name": "Whisper small", "engine": "faster-whisper INT8",
      "q": {"en": 4, "hi": 3, "mr": 2, "or": None}, "speed": 4, "ram_mb": 600, "disk_mb": 464,
      "min_ram_gb": 8, "measured": True,
      "note": "Measured: Marathi output was garbled. Fine for English and for the live mic, "
              "where latency matters more than the last word."},
-    {"id": "medium", "task": "asr", "name": "Whisper medium", "engine": "faster-whisper INT8",
+    {"id": "medium", "task": "asr", "licence": "MIT", "load_s": 5.0, "name": "Whisper medium", "engine": "faster-whisper INT8",
      "q": {"en": 5, "hi": 4, "mr": 4, "or": None}, "speed": 3, "ram_mb": 1600, "disk_mb": 1460,
      "min_ram_gb": 8, "measured": True,
      "note": "The best quality-per-second on a CPU-only machine. Produced meaningful Marathi."},
-    {"id": "large-v3", "task": "asr", "name": "Whisper large-v3", "engine": "faster-whisper INT8",
+    {"id": "large-v3", "task": "asr", "licence": "MIT", "load_s": 6.9, "name": "Whisper large-v3", "engine": "faster-whisper INT8",
      "q": {"en": 5, "hi": 5, "mr": 5, "or": None}, "speed": 2, "ram_mb": 3200, "disk_mb": 2948,
      "min_ram_gb": 16, "measured": True,
      "note": "Best accuracy available offline. Measured on a 4 GB laptop GPU at "
@@ -71,14 +71,14 @@ CATALOG = [
              "one-time processing but not for the live mic."},
 
     # ----------------------------------------------------------------- MT
-    {"id": "indictrans2", "task": "mt", "name": "IndicTrans2 (distilled)",
+    {"id": "indictrans2", "task": "mt", "licence": "MIT", "load_s": 22.0, "name": "IndicTrans2 (distilled)",
      "engine": "AI4Bharat 200M/320M",
      "q": {"en": 5, "hi": 5, "mr": 5, "or": 5}, "speed": 3, "ram_mb": 1200, "disk_mb": 6317,
      "min_ram_gb": 8, "measured": True,
      "note": "DEFAULT. Purpose-built for Indian languages; hi↔mr and hi↔or go direct with "
              "no English pivot, which is where NLLB loses the meaning. Ships as three "
              "direction checkpoints (indic→en, en→indic, indic→indic)."},
-    {"id": "nllb", "task": "mt", "name": "NLLB-200 distilled 600M",
+    {"id": "nllb", "task": "mt", "licence": "CC-BY-NC 4.0", "load_s": 6.0, "name": "NLLB-200 distilled 600M",
      "engine": "CTranslate2 INT8",
      "q": {"en": 4, "hi": 3, "mr": 2, "or": 2}, "speed": 4, "ram_mb": 700, "disk_mb": 640,
      "min_ram_gb": 4, "measured": True,
@@ -87,32 +87,32 @@ CATALOG = [
              "in Odia. Use only when disk is tight."},
 
     # ---------------------------------------------------------------- TTS
-    {"id": "mms-hin", "task": "tts", "name": "MMS-TTS Hindi", "engine": "VITS", "lang": "hi",
+    {"id": "mms-hin", "task": "tts", "licence": "CC-BY-NC 4.0", "load_s": 4.0, "name": "MMS-TTS Hindi", "engine": "VITS", "lang": "hi",
      "q": {"en": None, "hi": 4, "mr": None, "or": None}, "speed": 4, "ram_mb": 400,
      "disk_mb": 278, "min_ram_gb": 4, "measured": True, "note": "Clear Hindi voiceover."},
-    {"id": "mms-mar", "task": "tts", "name": "MMS-TTS Marathi", "engine": "VITS", "lang": "mr",
+    {"id": "mms-mar", "task": "tts", "licence": "CC-BY-NC 4.0", "load_s": 4.0, "name": "MMS-TTS Marathi", "engine": "VITS", "lang": "mr",
      "q": {"en": None, "hi": None, "mr": 4, "or": None}, "speed": 4, "ram_mb": 400,
      "disk_mb": 278, "min_ram_gb": 4, "measured": True,
      "note": "Ships with phonemize=True, which would demand espeak-ng. Its vocabulary is "
              "in fact 60 Devanagari tokens, so the flag is forced off and Marathi speech "
              "works with no extra system dependency."},
-    {"id": "mms-eng", "task": "tts", "name": "MMS-TTS English", "engine": "VITS", "lang": "en",
+    {"id": "mms-eng", "task": "tts", "licence": "CC-BY-NC 4.0", "load_s": 3.0, "name": "MMS-TTS English", "engine": "VITS", "lang": "en",
      "q": {"en": 4, "hi": None, "mr": None, "or": None}, "speed": 5, "ram_mb": 300,
      "disk_mb": 139, "min_ram_gb": 4, "measured": True, "note": "Fastest voice; smallest file."},
-    {"id": "mms-ory", "task": "tts", "name": "MMS-TTS Odia", "engine": "VITS", "lang": "or",
+    {"id": "mms-ory", "task": "tts", "licence": "CC-BY-NC 4.0", "load_s": 4.0, "name": "MMS-TTS Odia", "engine": "VITS", "lang": "or",
      "q": {"en": None, "hi": None, "mr": None, "or": 4}, "speed": 4, "ram_mb": 400,
      "disk_mb": 278, "min_ram_gb": 4, "measured": True,
      "note": "Gives Odia a voice even though no ASR model can transcribe Odia — the route "
              "is Marathi/Hindi speech → IndicTrans2 → Odia voiceover."},
 
     # ---------------------------------------------------------------- LLM
-    {"id": "qwen2.5:3b", "task": "llm", "name": "Qwen 2.5 3B Instruct", "engine": "GGUF Q4_K_M",
+    {"id": "qwen2.5:3b", "task": "llm", "licence": "Apache 2.0", "load_s": 2.4, "name": "Qwen 2.5 3B Instruct", "engine": "GGUF Q4_K_M",
      "q": {"en": 4, "hi": 3, "mr": 3, "or": 2}, "speed": 3, "ram_mb": 2600, "disk_mb": 1930,
      "min_ram_gb": 8, "measured": True,
      "note": "RECOMMENDED. Reasons in English over the transcript, then the answer is "
              "translated by IndicTrans2 — markedly better than asking a 3B model to "
              "compose directly in Marathi or Odia."},
-    {"id": "qwen2.5:1.5b", "task": "llm", "name": "Qwen 2.5 1.5B Instruct", "engine": "GGUF Q4_K_M",
+    {"id": "qwen2.5:1.5b", "task": "llm", "licence": "Apache 2.0", "load_s": 1.1, "name": "Qwen 2.5 1.5B Instruct", "engine": "GGUF Q4_K_M",
      "q": {"en": 3, "hi": 2, "mr": 2, "or": 2}, "speed": 5, "ram_mb": 1400, "disk_mb": 986,
      "min_ram_gb": 4, "measured": True,
      "note": "Automatic fallback when the 3B will not fit. Measured at 0.6 s for a short "
@@ -261,6 +261,53 @@ def recommended_preset(hw: dict | None = None) -> str:
     return "balanced"
 
 
+def best_picks(hw: dict | None = None) -> dict:
+    """The preference matrix: for each task × language, what to actually use here.
+
+    This is the question the catalogue implies but never states outright. Ranking is
+    quality first, then speed, then a smaller footprint — but only among models that
+    are installed AND fit this machine's memory, so the answer is actionable rather
+    than aspirational. `None` means no model can do that pair at all, which is a real
+    answer (every ASR × Odia cell) and is shown as such rather than left blank.
+    """
+    hw = hw or hardware()
+    have = installed_ids()
+    out = {}
+    for task in TASKS:
+        row = {}
+        for L in LANGS:
+            cands = [e for e in CATALOG
+                     if e["task"] == task and e["q"].get(L) and e["id"] in have
+                     and fits(e, hw)]
+            if not cands:
+                # fall back to anything that CAN do it, so the UI can say
+                # "possible, but not installed / does not fit" instead of "impossible"
+                other = [e for e in CATALOG if e["task"] == task and e["q"].get(L)]
+                row[L] = {"id": None, "why": ("not installed" if other
+                                              else "no model supports this")}
+                continue
+            best = sorted(cands, key=lambda e: (-e["q"][L], -e["speed"], e["ram_mb"]))[0]
+            alt = [e for e in cands if e["id"] != best["id"]]
+            row[L] = {"id": best["id"], "name": best["name"], "q": best["q"][L],
+                      "ram_mb": best["ram_mb"], "speed": best["speed"],
+                      "why": _why(best, L, alt)}
+        out[task] = row
+    return out
+
+
+def _why(best: dict, L: str, alt: list) -> str:
+    """One sentence explaining the pick, in terms of the runner-up."""
+    if not alt:
+        return "the only installed model that covers this language"
+    second = sorted(alt, key=lambda e: (-e["q"][L], -e["speed"], e["ram_mb"]))[0]
+    if best["q"][L] > second["q"][L]:
+        return (f"scores {best['q'][L]}/5 against {second['q'][L]}/5 for "
+                f"{second['name']}")
+    if best["speed"] > second["speed"]:
+        return f"same quality as {second['name']} but faster"
+    return f"same quality as {second['name']} in less memory"
+
+
 def overview(hw: dict | None = None) -> dict:
     hw = hw or hardware()
     rows = catalog(hw)
@@ -273,6 +320,7 @@ def overview(hw: dict | None = None) -> dict:
                           available=need.issubset(have),
                           missing=sorted(need - have))
     return {"hardware": hw, "tiers": TIERS, "tasks": TASKS, "catalog": rows,
+            "best": best_picks(hw),
             "presets": presets, "recommended": recommended_preset(hw),
             "langs": {k: {"name": v["name"], "native": v["native"], "asr": v["asr"]}
                       for k, v in LANGS.items()},
