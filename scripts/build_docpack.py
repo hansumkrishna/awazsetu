@@ -177,6 +177,43 @@ language or playing an Odia voiceover is a file read, not an inference.</p>
   <li><b>Zero-install distribution</b> — extract a folder, double-click one file.</li>
 </ul>
 
+<h3>Key user journeys</h3>
+<table>
+<tr><th>#</th><th>Journey</th><th>Steps</th><th>Time</th><th>Models loaded</th></tr>
+<tr><td>1</td><td><b>Watch a video in another language</b></td>
+<td>Open the library → click the item → choose a subtitle language → press play.
+To hear it spoken, pick a voiceover from the same row.</td>
+<td>~10 s</td><td><b>None.</b> Every track was built at ingest, so this is a file read</td></tr>
+<tr><td>2</td><td><b>Ask the video a question</b></td>
+<td>On the player, type the question in any of the four languages. The answer comes
+back in that language with timestamped citations you can click to jump to.</td>
+<td>3–8 s</td><td>Assistant only (2.6 GB, or 1.4 GB on the fallback)</td></tr>
+<tr><td>3</td><td><b>Ask out loud, hear the answer</b></td>
+<td>Tap the microphone, speak, release. The question is transcribed, answered from the
+transcript, and spoken back. <i>This is the journey that works for a user who cannot
+read or type</i> — the reason the product exists.</td>
+<td>10–20 s</td><td>Whisper small, then the assistant, then one voice — loaded in sequence, never together</td></tr>
+<tr><td>4</td><td><b>Add new material</b></td>
+<td>Drag a video or audio file onto the library. A weighted progress bar names each
+stage. When it finishes, every subtitle track and every voiceover already exists.</td>
+<td>≈0.5× the media length per pass</td><td>One stage at a time, by design</td></tr>
+<tr><td>5</td><td><b>Retune for the machine</b></td>
+<td>Open the Model Garden. It has already detected the hardware and highlighted a
+recommended preset; one click applies it. A preset needing an absent model is
+disabled rather than silently saved.</td>
+<td>~2 s</td><td>None — it reports what is on disk</td></tr>
+<tr><td>6</td><td><b>Take the content elsewhere</b></td>
+<td>Export subtitles as <code>.srt</code> per language, the transcript as text, or a
+single <code>.mkv</code> with every subtitle track and voiceover muxed in — playable in
+VLC on a machine that has never seen AwazSetu.</td>
+<td>~14 s for a 12-minute MKV</td><td>None (FFmpeg only)</td></tr>
+</table>
+<p class="small"><b>Fallback readiness.</b> If the 3B assistant will not fit, it falls back to
+the 1.5B automatically. If IndicTrans2 is unavailable, NLLB serves. If the GPU runs out of
+memory during batch preparation, that item retries on CPU. If the embedded interpreter is
+blocked by policy, <code>rescue_kit/</code> rebuilds the same pinned environment offline.
+Each fallback is automatic and none requires a network.</p>
+
 <h3>Assumptions</h3>
 <ul>
   <li>The operator machine matches the stated baseline: Intel i5 11th gen or Ryzen 5, 6+ cores,
@@ -502,6 +539,52 @@ of the repository by <code>.gitignore</code> and form no part of any package.</p
   <li>Reprocess the library once the glossary is agreed — a background job, not a rebuild.</li>
   <li>Review the priority improvements in §4 and choose one for the next iteration.</li>
 </ol>
+
+<h2>8. Differentiation — AwazSetu and Bhashini</h2>
+<p>Bhashini is the right answer to a different question. It is national digital infrastructure:
+a hosted API, 22 scheduled languages, full-precision models on servers. AwazSetu is a
+finished workflow for one organisation's field video, on one laptop, with the network off.
+They are complementary, and the honest comparison matters more than a favourable one.</p>
+
+<table>
+<tr><th>Dimension</th><th>Bhashini</th><th>AwazSetu</th><th>Why it matters to BAIF</th></tr>
+<tr><td><b>Unit of work</b></td><td>A translation / ASR / TTS API call</td>
+<td>A video: transcript → 4 languages → subtitles → voiceover → grounded Q&amp;A</td>
+<td>BAIF needs the journey, not a building block to integrate</td></tr>
+<tr><td><b>Connectivity</b></td><td>Requires the internet for every call</td>
+<td>Never touches a network; downloads are made impossible, not merely avoided</td>
+<td>The content is used where the uplink is not dependable</td></tr>
+<tr><td><b>Data control</b></td><td>Field recordings leave the organisation</td>
+<td>Nothing leaves the laptop</td><td>Recordings identify farmers and their holdings</td></tr>
+<tr><td><b>Cost</b></td><td>Per minute, every time</td><td>Zero marginal cost; reprocessing is free</td>
+<td>The library is reprocessed whenever terminology is corrected</td></tr>
+<tr><td><b>Domain vocabulary</b></td><td>General-purpose models</td>
+<td>An editable agricultural glossary corrects both source and target</td>
+<td>The failures are systematic, so they are fixable in one place</td></tr>
+<tr><td><b>Accessibility</b></td><td>Text in, text out</td>
+<td>Ask out loud, hear the answer, in four languages</td>
+<td>The primary audience may not read or type</td></tr>
+<tr><td><b>Setup</b></td><td>API keys, integration work, a network</td>
+<td>Extract a folder, double-click one file</td><td>A field office can run it unaided</td></tr>
+</table>
+
+<h3>Where Bhashini is genuinely better</h3>
+<div class="box">
+<ul>
+  <li><b>Language coverage.</b> 22 scheduled languages against our four. Adding a language
+      here needs an ASR model, a translation direction and a voice — and for many
+      languages the voice does not exist offline.</li>
+  <li><b>Raw model quality.</b> We run the same IndicTrans2 family, but <i>distilled</i> to
+      fit 16 GB. On the hardest sentences the full-precision server models retain an edge.</li>
+  <li><b>Maintenance.</b> Bhashini improves without BAIF doing anything. Our models improve
+      only when someone rebuilds a package.</li>
+  <li><b>Scale.</b> For thousands of videos a day, a hosted service is the right shape.</li>
+</ul>
+<p><b>When to choose which.</b> Use Bhashini for breadth of language and centralised, online,
+high-volume work. Use AwazSetu when the material is sensitive, the venue is offline, the
+vocabulary is specialised, and the audience needs to <i>listen</i> rather than read — which
+describes BAIF's field extension work precisely.</p>
+</div>
 
 <h3>Repository</h3>
 <pre>{e(D.git_log())}</pre>
