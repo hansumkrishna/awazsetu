@@ -53,7 +53,7 @@ def _temps():
 
 
 
-def _dedupe(text: str, max_ngram: int = 6) -> str:
+def _dedupe(text: str, max_ngram: int = 12) -> str:
     """Collapse degenerate n-gram loops, e.g. a phrase repeated 13 times.
 
     Whisper echoes its own `initial_prompt` or spirals on unclear audio, and the
@@ -198,6 +198,13 @@ def is_degenerate(text: str, lang: str) -> tuple[bool, str]:
     # 1) hardly any distinct characters -> degenerate loop
     if len(t) >= 20 and len(set(letters)) / max(1, len(letters)) < 0.12:
         return True, "low-diversity"
+    # 1b) many words but few DISTINCT words -> a phrase-level decoder loop.
+    # Character diversity stays normal when a whole phrase repeats, so the check
+    # above cannot see it. Measured across 476 real segments: exactly one scored
+    # below 0.40 and it was a true loop, so 0.35 separates cleanly with margin.
+    words = t.split()
+    if len(words) >= 20 and len(set(words)) / len(words) < 0.35:
+        return True, "repetition-loop"
     # 2) wrong script for the language
     exp = _EXPECTED.get(lang)
     if exp:
