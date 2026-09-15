@@ -82,11 +82,13 @@ GOOD_Q = {
     "en": "What is this video about?",
     "hi": "यह वीडियो किस बारे में है?",
     "mr": "हा व्हिडिओ कशाबद्दल आहे?",
+    "or": "ଏହି ଭିଡିଓ କେଉଁ ବିଷୟରେ?",
 }
 OFFTOPIC_Q = {
     "en": "What is the share price of Reliance Industries today?",
     "hi": "आज रिलायंस का शेयर भाव क्या है?",
     "mr": "आज रिलायन्सचा शेअर भाव किती आहे?",
+    "or": "ଆଜି ରିଲାଏନ୍ସର ସେୟାର ଦାମ କେତେ?",
 }
 # The catastrophic failure we are guarding against.
 BANNED = ["modeling", "modelling", "मॉडलिंग", "fashion", "film career"]
@@ -107,7 +109,8 @@ def suite_chat(ms):
             # wrongly-refused general question through as green.
             refused = (r.get("grounded") is False)
             on_topic = any(w in a.lower() for w in
-                           ("goat", "बकर", "शेळ", "rear", "farm", "पालन", "शेती"))
+                           ("goat", "बकर", "शेळ", "rear", "farm", "पालन", "शेती",
+                            "ଛେଳି", "ପାଳନ", "ରୋଗ", "ଚିକିତ୍ସା"))
             ok = bool(a.strip()) and not leaked and not refused and on_topic
             why = ("HALLUCINATION:%s " % leaked if leaked else
                    "WRONGLY REFUSED a general question " if refused else

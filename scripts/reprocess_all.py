@@ -151,13 +151,49 @@ def phase_asr(todo, fh):
     log(f"ASR phase done in {(time.time()-t_all)/60:.1f} min", fh)
 
 
+def _free_gb():
+    try:
+        import ctypes
+
+        class MS(ctypes.Structure):
+            _fields_ = [("dwLength", ctypes.c_ulong), ("dwMemoryLoad", ctypes.c_ulong),
+                        ("ullTotalPhys", ctypes.c_ulonglong),
+                        ("ullAvailPhys", ctypes.c_ulonglong),
+                        ("ullTotalPageFile", ctypes.c_ulonglong),
+                        ("ullAvailPageFile", ctypes.c_ulonglong),
+                        ("ullTotalVirtual", ctypes.c_ulonglong),
+                        ("ullAvailVirtual", ctypes.c_ulonglong),
+                        ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+        m = MS()
+        m.dwLength = ctypes.sizeof(MS)
+        ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(m))
+        return m.ullAvailPhys / (1024 ** 3)
+    except Exception:
+        return None
+
+
 def phase_mt(todo, fh, workers: int):
-    """CPU pass: translate + subtitle, several items at a time."""
+    """CPU pass: translate + subtitle, several items at a time.
+
+    Worker count is capped by FREE memory, not by core count. Each IndicTrans2
+    process resides at about 1.6 GB, and three of them alongside anything else on a
+    16 GB machine crashed the native extension with 0xC0000005 rather than raising
+    a clean MemoryError -- so the cap has to be applied before launching, not
+    recovered from afterwards.
+    """
     import subprocess
     helper = os.path.join(os.path.dirname(os.path.abspath(__file__)), "_mt_one.py")
+    free = _free_gb()
+    if free:
+        safe = max(1, int(free // 2.2))
+        if safe < workers:
+            log(f"MT: {free:.1f} GB free -> capping {workers} workers to {safe}", fh)
+            workers = safe
     queue = list(todo)
+    src_of = {t[0]: t[2] for t in todo}
     running: list = []
     done = fails = 0
+    attempts: dict = {}
     t0 = time.time()
     log(f"MT: {len(queue)} item(s), {workers} parallel worker(s)", fh)
     env = dict(os.environ)
@@ -184,8 +220,17 @@ def phase_mt(todo, fh, workers: int):
                 log(f"  MT done  {vid[:8]} in {time.time()-t_start:.0f}s :: "
                     f"{tail[0] if tail else ''}", fh)
             else:
-                fails += 1
-                log(f"  MT FAIL  {vid[:8]} rc={p.returncode} :: {out[-400:]}", fh)
+                n = attempts.get(vid, 0) + 1
+                attempts[vid] = n
+                if n == 1:
+                    # One retry, alone. A native crash here is nearly always memory
+                    # pressure from a neighbour, and it clears when run solo.
+                    log(f"  MT retry {vid[:8]} (attempt 2, will run with fewer "
+                        f"neighbours) rc={p.returncode}", fh)
+                    queue.append((vid, None, src_of.get(vid), title))
+                else:
+                    fails += 1
+                    log(f"  MT FAIL  {vid[:8]} rc={p.returncode} :: {out[-400:]}", fh)
     log(f"MT: {done} ok, {fails} failed in {(time.time()-t0)/60:.1f} min", fh)
 
 
