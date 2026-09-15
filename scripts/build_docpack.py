@@ -279,6 +279,32 @@ Each fallback is automatic and none requires a network.</p>
       later feature reads.</li>
 </ol>
 
+<h3>Integration points</h3>
+<p>The system deliberately integrates with <b>nothing at runtime</b> — no API, no broker, no
+directory service, no cloud account. That is the security posture, not an omission. What it
+does offer is a set of plain, inspectable boundaries that BAIF can build on without touching
+the application:</p>
+<table>
+<tr><th>Boundary</th><th>Shape</th><th>What it enables</th></tr>
+<tr><td><b>Input</b></td><td>Any file dropped on the library page, or
+<code>run.py &lt;path&gt;</code> from a script</td>
+<td>A watched folder or a batch job can feed it without a UI. <code>scripts/batch_process.py</code> already does this.</td></tr>
+<tr><td><b>Output — subtitles</b></td><td>WebVTT per language, exported as <code>.srt</code></td>
+<td>Drop straight into YouTube, VLC, or any editing suite.</td></tr>
+<tr><td><b>Output — bundle</b></td><td>A single <code>.mkv</code> with every subtitle track and
+voiceover muxed in</td><td>Plays in VLC on a machine that has never seen AwazSetu. This is how content leaves for distribution.</td></tr>
+<tr><td><b>Output — text</b></td><td>Transcript export, and <code>manifest.json</code> per item</td>
+<td>The manifest is the contract: segment timings and every language in one JSON file, so any downstream tool can consume it.</td></tr>
+<tr><td><b>Terminology</b></td><td><code>app/glossary.json</code></td>
+<td>BAIF's own vocabulary, editable without code. Corrections apply on the next reprocess.</td></tr>
+<tr><td><b>Languages</b></td><td><code>app/langs.py</code></td>
+<td>One entry adds a language everywhere, given an ASR model, a translation direction and a voice.</td></tr>
+<tr><td><b>Library</b></td><td><code>app/data/work/&lt;id&gt;/</code> on disk</td>
+<td>Copyable between machines. Several operators can process in parallel and pool results by copying folders — no shared service to contend on.</td></tr>
+<tr><td><b>HTTP</b></td><td>Flask on <code>127.0.0.1:5000</code></td>
+<td>Loopback only. If BAIF ever wants a LAN deployment that is a one-line bind change plus a security review — deliberately not done here.</td></tr>
+</table>
+
 <h3>Non-functional requirements</h3>
 <table>
 <tr><th>Concern</th><th>How it is met</th></tr>
@@ -332,6 +358,40 @@ shipped artefact is precomputed the demo machine never runs these workloads.</p>
 <p>{n_items} items — the BAIF field videos plus Odia instructional videos and English audio clips —
 totalling <b>{q(total_min,1)} minutes</b> of speech and <b>{total_segs} transcript segments</b>,
 yielding {n_subs} subtitle tracks and {n_dubs} voiceovers.</p>
+
+<h3>How quality was validated</h3>
+<p><b>There are no reference transcripts for this material, so there is no WER or BLEU score
+to quote.</b> Publishing one would mean inventing a ground truth. Quality was instead
+established by four means, each of which is reproducible:</p>
+<table>
+<tr><th>Stage</th><th>How it was judged</th><th>What it caught</th></tr>
+<tr><td><b>Transcription</b></td>
+<td>Whisper's own per-segment mean log-probability, recorded in every manifest, plus a
+sanitiser that rejects degenerate output before it can propagate.</td>
+<td>A 60-character Bengali loop that scored <i>high</i> confidence; a phrase repeated for 44
+seconds; and <code>small</code> silently truncating audio, found by re-transcribing and
+comparing recovered duration.</td></tr>
+<tr><td><b>Translation</b></td>
+<td>Head-to-head on domain vocabulary from the actual videos, in all four languages.</td>
+<td>NLLB rendering <i>tubers</i> as a fungus in Marathi, cooking pots in Hindi and a bush in
+Odia — three different wrong answers from one word. This is what moved the default to
+IndicTrans2.</td></tr>
+<tr><td><b>Voiceover</b></td>
+<td>Waveform energy and duration per track, plus listening.</td>
+<td>Marathi producing near-silence (6,444 bytes against 204,332 after the fix) because the
+tokenizer demanded a phonemiser that is not installable offline.</td></tr>
+<tr><td><b>Assistant</b></td>
+<td>An automated suite that asks a covered question and an uncovered one in every language,
+and fails the run if a general question is <i>wrongly refused</i> as well as if an
+uncovered one is answered.</td>
+<td>A hallucinated answer about a "modeling career" absent from the video; and, later, the
+opposite failure — a correct general question being refused because Devanagari token cost
+had overflowed the context window.</td></tr>
+</table>
+<p class="small">The asymmetry in the last row is deliberate. An early version of that test
+only checked for the hallucinated word, so a refusal counted as a pass — which meant a
+model that refused <i>everything</i> would have scored perfectly. The assertion now fails in
+both directions.</p>
 
 <h3>Measured transcription throughput</h3>
 <table>
