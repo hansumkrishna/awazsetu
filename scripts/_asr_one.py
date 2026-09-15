@@ -73,6 +73,18 @@ def main():
         msg = str(e)
         if device == "cuda" and ("out of memory" in msg.lower() or "cuda" in msg.lower()):
             print(f"ASR_RETRY_CPU {vid}: {type(e).__name__}: {msg[:120]}", flush=True)
+            # Release the CUDA context first. A half-initialised model keeps its
+            # allocation, so the card stayed ~2 GB down for the whole CPU retry and
+            # the next item inherited a smaller budget than it should have had.
+            try:
+                import gc
+                import torch
+                gc.collect()
+                if torch.cuda.is_available():
+                    torch.cuda.empty_cache()
+                    torch.cuda.ipc_collect()
+            except Exception:
+                pass
             run(vid, src, "cpu")
         else:
             raise

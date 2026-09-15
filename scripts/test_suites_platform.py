@@ -118,7 +118,38 @@ def suite_platform(ms):
     except Exception as ex:
         T.rec("platform", "presets_honest", "-", False, repr(ex), time.time() - t)
 
-    # 7) Odia must never be offered as a transcription source
+    # 7) applying a preset must actually change settings, and be reversible
+    t = time.time()
+    saved = None
+    try:
+        import json
+        import config
+        import server
+        saved = open(config.PATH, encoding="utf-8").read()
+        c = server.app.test_client()
+        before = config.load()["asr_model"]
+        r1 = c.post("/api/garden/preset/fast_low_ram")
+        changed = config.load()["asr_model"]
+        r2 = c.post("/api/garden/preset/balanced")
+        restored = config.load()["asr_model"]
+        r3 = c.post("/api/garden/preset/does_not_exist")
+        ok = (r1.status_code == 200 and r2.status_code == 200
+              and r3.status_code == 404 and changed != before and restored == "medium")
+        T.rec("platform", "preset_apply_roundtrip", "-", ok,
+              f"{before} -> fast_low_ram={changed} -> balanced={restored}; "
+              f"unknown preset returns {r3.status_code}", time.time() - t)
+    except Exception as ex:
+        T.rec("platform", "preset_apply_roundtrip", "-", False, repr(ex), time.time() - t)
+    finally:
+        if saved is not None:          # never leave the operator's settings altered
+            try:
+                import config as _c
+                open(_c.PATH, "w", encoding="utf-8").write(saved)
+                _c.apply_to_env()
+            except Exception:
+                pass
+
+    # 8) Odia must never be offered as a transcription source
     t = time.time()
     try:
         from langs import can_transcribe
