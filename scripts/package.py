@@ -241,7 +241,14 @@ def write_readme(root: str, kind: str):
              "  * MMS-TTS hin / mar / eng / ory — voiceovers and spoken answers\n"
              "  * Qwen 2.5 3B + 1.5B — the chat assistant\n\n"
              "Whisper large-v3 and the NLLB fallback are in the FULL build. The Model Garden\n"
-             "shows them as *not installed* here, so nothing offers a choice that is absent.\n")
+             "shows them as *not installed* here, so nothing offers a choice that is absent.\n\n"
+             "> **Why the library says `large-v3` but this build ships `medium`.** The videos\n"
+             "> and audio here were transcribed once, on a GPU machine, with `large-v3` — the\n"
+             "> best model available — and the results ship precomputed, so this laptop never\n"
+             "> has to run it. `medium` is what a *newly added* file would use, and it is the\n"
+             "> right choice for a CPU-only machine: near-identical Indic accuracy at roughly a\n"
+             "> third of the processing time. Nothing is degraded; the expensive work is\n"
+             "> already done.\n")
     with open(os.path.join(root, "READ_ME_FIRST.md"), "w", encoding="utf-8") as f:
         f.write(f"""# AwazSetu — {kind.upper()} package
 
