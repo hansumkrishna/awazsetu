@@ -52,6 +52,7 @@ pre { background: #f7f6f3; border: 1px solid #e7e6e1; border-radius: 4px; paddin
 .box b { color:#b01c24; }
 svg { width: 100%; height: auto; }
 .small { font-size: 8.4pt; color: #666; }
+.why { font-size: 7.6pt; color:#555; }
 """
 
 
@@ -112,6 +113,15 @@ def build_html(team_no: str) -> str:
                          + f"<td class='n'>{r['speed']}/5</td><td class='n'>{r['ram_mb']}</td>"
                          f"<td class='n'>{q(r['disk_mb']/1024,1)}</td>"
                          f"<td>{'yes' if r['installed'] else 'no'}</td></tr>")
+
+    tr = D.test_results()
+    tr_rows = "".join(
+        f"<tr><td>{e(r.get('suite'))}</td><td>{e(r.get('case'))}</td>"
+        f"<td>{e(r.get('lang'))}</td>"
+        f"<td>{'<span class=k>PASS</span>' if r.get('ok') else '<span class=w>FAIL</span>'}</td>"
+        f"<td class='n'>{r.get('secs') if r.get('secs') is not None else ''}</td>"
+        f"<td class='why'>{e(r.get('detail',''))[:150]}</td></tr>"
+        for r in tr)
 
     dp, dw, dx = doc.count("[ok]"), doc.count("[--]"), doc.count("[XX]")
     size_lite = sizes.get("lite", 0) / 1e9
@@ -424,6 +434,16 @@ no system Python, no PATH entries, no network.</p>
 <td>Identical synthesis</td><td>All 128 weight-norm tensors verified equal; output bit-identical</td><td><span class="k">PASS</span></td></tr>
 <tr><td>12</td><td>ASR survives a GPU out-of-memory</td><td>Item fails alone, or retries on CPU</td>
 <td>Per-item process isolation + CPU fallback</td><td><span class="k">PASS</span></td></tr>
+</table>
+
+<h3>Automated suite — last run, verbatim</h3>
+<p class="small">Read from <code>docs/test_results.json</code> at build time, failures
+included. The table above is curated and covers history the suite cannot re-run; this one
+is simply what the suite asserted, so the pack shows its working rather than only its
+conclusions.</p>
+<table>
+<tr><th>Suite</th><th>Case</th><th>Lang</th><th>Result</th><th class="n">Secs</th><th>Detail</th></tr>
+{tr_rows or '<tr><td colspan="6">No automated run recorded.</td></tr>'}
 </table>
 
 <h3>Processed library — current state</h3>

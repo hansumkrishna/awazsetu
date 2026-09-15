@@ -220,3 +220,21 @@ ARCH_SVG = """
   <text class="s" x="24" y="488">Work folders are keyed by SHA-256 of the source file, so re-adding the same media is idempotent and URLs stay stable.</text>
 </svg>
 """
+
+
+def test_results():
+    """The last automated run, read from docs/test_results.json.
+
+    The curated expected-vs-actual table in the pack is hand-written and covers
+    history the suite cannot re-run. This is the complement: whatever the suite
+    actually asserted the last time it ran, reported verbatim including failures.
+    A pack that showed only the curated table would be making claims; this one shows
+    its working.
+    """
+    p = os.path.join(REPO, "docs", "test_results.json")
+    try:
+        with open(p, encoding="utf-8") as f:
+            rows = json.load(f)
+    except Exception:
+        return []
+    return rows
