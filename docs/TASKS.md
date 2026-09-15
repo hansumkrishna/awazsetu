@@ -121,3 +121,30 @@ Status key: `[x]` done · `[~]` in progress · `[ ]` pending · `[>]` deferred b
 Full pipeline per video (GPU): 165-406 s depending on length.
 Translation mr->hi+en: NLLB 11 s vs IndicTrans2 25 s for 6 segments.
 Language detection: Marathi at p=0.95-1.00 on all 8 videos.
+
+---
+
+# Superseded decisions and later corrections (15 Sep 2026)
+
+This file is a historical log. Entries above are left as written so the reasoning at the
+time stays legible; where a decision was later reversed, it is corrected here rather than
+edited away.
+
+| Earlier entry | What changed | Why |
+|---|---|---|
+| "Measured IndicTrans2 vs NLLB on real content: **kept NLLB**" | **Reversed — IndicTrans2 is now the default.** | The original comparison ran on a garbled Marathi transcript, which flattered NLLB by giving both engines nonsense. Re-tested on clean text, NLLB rendered *tubers* as a fungus in Marathi, as cooking pots in Hindi and as a bush in Odia. IndicTrans2 also translates hi↔mr and hi↔or directly, with no English pivot. |
+| "Whisper `medium` recommended; shipped content transcribed with `small`" | **The shipped library is now large-v3 throughout.** | Every manifest recorded `asr_model: small`. Re-transcribing showed `small` had been silently truncating: recovered speech rose from 73.7 to **81.6 minutes**, one video gaining 2.9 minutes that had never been transcribed at all. `medium` remains the recommended setting for a CPU-only machine; the shipped artefacts were prepared with large-v3 and ship precomputed. |
+| "large-v3 CUDA-OOMs on a 4 GB GPU" | **Disproven.** | With `int8_float16` it loads in 6.9 s and decodes at RTF 0.34–0.66 on a 4 GB laptop GPU. It does need **one process per item**: a shared CUDA context exhausted the card after two items and then failed every subsequent one. |
+| "Chat LLM via Ollama" | **Replaced by in-process llama-cpp-python.** | Ollama's blob store is already GGUF, so the same weights load from a 7.1 MB wheel. It removed a 1.5 GB installer, an `xcopy` into `%USERPROFILE%` and a background service that was measured holding **3.9 GB resident while idle**. Ollama is still used automatically if a machine already runs it. |
+| "Three languages tuned (hi/mr/en)" | **Four — Odia added as a target.** | Odia has no open ASR model, so it is output-only: Marathi or Hindi speech is transcribed, translated by IndicTrans2, and spoken by the Odia voice. Odia-**source** audio is transcribed phonetically and is approximate; this is documented rather than hidden. |
+| "Offline install: Python installer, pip, FFmpeg on PATH, Ollama" | **Nothing is installed any more.** | The package ships an embedded Python 3.10 and FFmpeg. The previous offline wheel kit had never actually been built from and had drifted to numpy 2.2.6 / torch 2.14 — an ABI break for the CTranslate2 and torch builds in use. `requirements-pinned.txt` now records the versions that are known to work. |
+
+## Defects found on 15 Sep that were invisible in normal use
+
+| Defect | Why it was invisible | Impact |
+|---|---|---|
+| `is_degenerate` deleted long English segments | The threshold was a distinct/total letter ratio tuned on Devanagari. Latin has 26 letters, so any English sentence beyond ~215 characters scored under it. | One item lost its only segment: empty subtitles, silent voiceover, nothing to ask about — and no error anywhere. |
+| `load_manifest` trusted the stored content hash | The library page built links from the folder, so the item looked fine until opened. | One item rendered a player whose every URL pointed at a non-existent directory. |
+| `export_mkv` referenced an unbound alias | Only reachable by clicking the bundle export. | Every MKV export raised `NameError`. |
+| Voiceovers were never marked stale | The audio still played. | After a re-transcription, every voiceover spoke the previous transcript. |
+| Test suites ran as a duplicate module | Results were recorded, just into a different list than the reporter read. | A full run reported "0/0 passed" while asserting 12 cases. |
