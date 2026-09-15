@@ -163,8 +163,28 @@ def check_docpack():
     size = os.path.getsize(os.path.join(DIST, f))
     named = "[" in f or "_" in f.replace("BAIF_Hackathon_", "").replace("_DocumentationPack", "")
     rec("PASS", "documentation pack", f"{f} ({size/1e6:.2f} MB)")
-    if "FluentFusion_Doc" in f:
-        rec("WARN", "  team number", "filename has no [team #] — convention is TeamName[team #]")
+    # The placeholder must be caught here. The first version tested for
+    # "FluentFusion_Doc", which stopped matching the moment the filename became
+    # "FluentFusion_TBD_Doc" -- so the gate reported a clean sweep on a pack that
+    # still said TO BE COMPLETED on its cover. A gate that misses a known
+    # placeholder is worse than no gate, because it grants false confidence.
+    if "_TBD" in f or "TBD" in f:
+        rec("WARN", "  team number", "filename still says TBD — run "
+            "build_docpack.py --team <#> --owners \"...\"")
+    try:
+        html = os.path.join(DIST, f.replace(".pdf", ".html"))
+        if os.path.exists(html):
+            body = open(html, encoding="utf-8", errors="ignore").read()
+            if "TO BE COMPLETED" in body:
+                which = []
+                if "TO BE COMPLETED — team number" in body:
+                    which.append("team number")
+                if "TO BE COMPLETED — owner" in body:
+                    which.append("owners/contacts")
+                rec("WARN", "  pack placeholders",
+                    "still unfilled: " + ", ".join(which))
+    except Exception:
+        pass
 
 
 def check_git():

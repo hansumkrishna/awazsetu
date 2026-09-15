@@ -54,7 +54,11 @@ WORK_SKIP_PREFIX = ("_t_", "_q_")
 
 # Never ship: duplicate weights, caches, and the git metadata of the source tree.
 DROP_FILES = ("pytorch_model.bin",)
-DROP_DIRS = ("__pycache__", ".git", ".locks", "data")
+# NB: "data" is NOT in this list, and must never be. torch/utils/data and
+# transformers/data are real packages; a blanket skip of every directory called
+# "data" silently produced a package whose runtime could not `import torch`.
+# app/data is excluded separately, by path, in _ignore_app().
+DROP_DIRS = ("__pycache__", ".git", ".locks")
 
 
 def log(*a):
@@ -62,10 +66,20 @@ def log(*a):
 
 
 def _ignore(_dir, names):
-    out = set()
-    for n in names:
-        if n in DROP_DIRS or n.endswith(".pyc"):
-            out.add(n)
+    """Skip caches and VCS metadata only — never anything a package needs."""
+    return {n for n in names if n in DROP_DIRS or n.endswith(".pyc")}
+
+
+def _ignore_app(dirpath, names):
+    """As _ignore, plus app/data — excluded BY PATH, not by name.
+
+    The processed library is copied separately by copy_work(), which filters out
+    the regenerable extractions. Excluding it by directory name instead would also
+    strip torch/utils/data and transformers/data from the bundled runtime.
+    """
+    out = _ignore(dirpath, names)
+    if os.path.abspath(dirpath) == os.path.abspath(os.path.join(REPO, "app")):
+        out = out | ({"data"} & set(names))
     return out
 
 
@@ -131,7 +145,7 @@ def build(kind: str) -> str:
         src = os.path.join(REPO, item)
         if os.path.isdir(src):
             shutil.copytree(src, os.path.join(root, item), dirs_exist_ok=True,
-                            ignore=_ignore)
+                            ignore=_ignore_app if item == "app" else _ignore)
         elif os.path.isfile(src):
             shutil.copy2(src, os.path.join(root, item))
     os.makedirs(os.path.join(root, "app", "data"), exist_ok=True)
