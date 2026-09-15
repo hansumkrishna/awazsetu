@@ -11,7 +11,6 @@ from __future__ import annotations
 import os
 import sys
 import statistics
-from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
@@ -84,7 +83,6 @@ def build_html(team_no: str) -> str:
     rtfs = [t["rtf"] for t in tim if t.get("model") == "large-v3"]
     rtf_med = statistics.median(rtfs) if rtfs else None
 
-    today = datetime.now().strftime("%d %B %Y")
     # Render a visible marker when a required value has not been supplied, so the pack
     # cannot be sent out silently carrying a blank or an invented one.
     tno = f" [{team_no}]" if team_no else f' <span class="todo">[{TODO_TEAM}]</span>'
@@ -173,10 +171,7 @@ def build_html(team_no: str) -> str:
   <div class="meta">
     <b>Team {e(TEAM)}{tno}</b><br>
     {owners_html}<br>
-    {e(today)}<br><br>
-    <span class="small">Every figure in this document was generated from the running system by
-    <code>scripts/build_docpack.py</code>.<br>
-    Re-running it reproduces this pack from the current state of the repository.</span>
+    September 2026
   </div>
 </div>
 
@@ -530,10 +525,9 @@ no system Python, no PATH entries, no network.</p>
 </table>
 
 <h3>Automated suite — last run, verbatim</h3>
-<p class="small">Read from <code>docs/test_results.json</code> at build time, failures
-included. The table above is curated and covers history the suite cannot re-run; this one
-is simply what the suite asserted, so the pack shows its working rather than only its
-conclusions.</p>
+<p class="small">The full output of the acceptance suite, failures included. The table
+above is curated and covers cases the suite cannot re-run; this one is simply what the
+suite asserted.</p>
 <table>
 <tr><th>Suite</th><th>Case</th><th>Lang</th><th>Result</th><th class="n">Secs</th><th>Detail</th></tr>
 {tr_rows or '<tr><td colspan="6">No automated run recorded.</td></tr>'}
@@ -722,8 +716,11 @@ vocabulary is specialised, and the audience needs to <i>listen</i> rather than r
 describes BAIF's field extension work precisely.</p>
 </div>
 
-<h3>Repository</h3>
-<pre>{e(D.git_log())}</pre>
+<h3>Source and build</h3>
+<table>
+<tr><td>Source code</td><td><code>https://github.com/hansumkrishna/awazsetu</code></td></tr>
+<tr><td>Build and models</td><td><code>https://drive.google.com/drive/folders/1XU_praP4yQI96gfpGzHaK01Uthx6WYmc</code></td></tr>
+</table>
 
 </body></html>"""
 

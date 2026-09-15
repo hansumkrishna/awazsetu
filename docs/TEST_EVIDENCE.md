@@ -1,6 +1,6 @@
 # AwazSetu — Test Evidence
 
-Run: 2026-09-15 22:29:23 · **128/128 passed**
+**128/128 passed**
 
 | Suite | Case | Lang | Result | Time | Detail |
 |---|---|---|---|---|---|

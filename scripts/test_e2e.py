@@ -230,8 +230,7 @@ def write_report():
     passed = sum(1 for r in RESULTS if r["ok"])
     with open(p, "w", encoding="utf-8") as f:
         f.write("# AwazSetu — Test Evidence\n\n")
-        f.write(f"Run: {time.strftime('%Y-%m-%d %H:%M:%S')} · "
-                f"**{passed}/{total} passed**\n\n")
+        f.write(f"**{passed}/{total} passed**\n\n")
         f.write("| Suite | Case | Lang | Result | Time | Detail |\n")
         f.write("|---|---|---|---|---|---|\n")
         for r in RESULTS:
