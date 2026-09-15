@@ -335,6 +335,19 @@ transcribed cannot be translated, subtitled, voiced or asked about, so this was 
 every downstream feature.</p>
 </div>
 
+<h3>What removing the second server bought</h3>
+<div class="box">
+<p><b>Ollama was holding 3.9 GB resident while idle.</b> Measured on this machine: stopping
+it took free memory from 1.0 GB to 4.6 GB. On the 16 GB target that is a quarter of the
+machine, reserved permanently by a service that exists only to hold weights the
+application can load itself.</p>
+<p>Replacing it with in-process <code>llama-cpp-python</code> returns that memory, removes a
+1.5 GB installer, an <code>xcopy</code> into <code>%USERPROFILE%</code> and a background
+process from the deployment — and loads bit-identical weights, because Ollama's blob store
+is GGUF already. The memory is not merely freed on paper: batch translation was crashing
+with access violations at 1.3 GB free and stopped crashing once it was reclaimed.</p>
+</div>
+
 <h3>Model footprint and per-language quality</h3>
 <table>
 <tr><th>Model</th><th class="n">en</th><th class="n">hi</th><th class="n">mr</th><th class="n">or</th>
