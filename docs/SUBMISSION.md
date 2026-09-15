@@ -6,20 +6,24 @@
 
 ---
 
-## Before you send — two values are still placeholders
+## Team 7 — Fluent Fusion
 
-The pack renders a highlighted **TO BE COMPLETED** marker and a DRAFT banner on the
-cover wherever a required value is missing, so it cannot be sent out silently
-incomplete. Fill both in with one command:
+| Name | Role | Contact |
+|---|---|---|
+| Sivani Tumuluri | **Team lead** | sivani.tumuluri@noexternalmail.hsbc.com |
+| Hansum Krishna | **Technical owner** — pipeline, models, packaging | hansum.krishna@hsbc.co.in |
+| Lahari Gali | Team member | lahari.gali@hsbc.co.in |
+| Uthsava Kumari | Team member | — |
+| Sakshi Jain | Team member | — |
+
+**The build and models, on Google Drive:**
+https://drive.google.com/drive/folders/1XU_praP4yQI96gfpGzHaK01Uthx6WYmc?usp=sharing
+
+To regenerate the pack at any time — every figure is re-read from the repository:
 
 ```bat
-python scripts\build_docpack.py --team 4 --owners "Hansum Krishna (technical owner), hansum@example.com" --pdf
+python scripts\build_docpack.py --team 7 --owners "Sivani Tumuluri <sivani.tumuluri@noexternalmail.hsbc.com> | Team lead; Hansum Krishna <hansum.krishna@hsbc.co.in> | Technical owner - pipeline, models, packaging; Lahari Gali <lahari.gali@hsbc.co.in> | Team member; Uthsava Kumari | Team member; Sakshi Jain | Team member" --pdf
 ```
-
-That regenerates `dist\BAIF_Hackathon_FluentFusion[4]_DocumentationPack.pdf` with the
-banner gone. Everything else in the pack is read from the live repository at build
-time, so it needs no other editing.
-
 ---
 
 ## What to attach
@@ -58,8 +62,11 @@ the repo and the pack carry the evidence, and the demo was given in person on 3 
 > The source is at https://github.com/hansumkrishna/awazsetu. I am happy to walk
 > through any section or run the system live.
 >
+> The build itself, if you would like to run it:
+> https://drive.google.com/drive/folders/1XU_praP4yQI96gfpGzHaK01Uthx6WYmc?usp=sharing
+>
 > Kind regards,
-> Sivani, Hansum and Lahari
+> Sivani, Hansum, Lahari, Uthsava and Sakshi
 > *Team 7 — Fluent Fusion*
 
 ---

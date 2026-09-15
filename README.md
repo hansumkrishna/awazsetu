@@ -17,7 +17,11 @@ Built for BAIF · Tech for Good.
 
 ## Run it
 
-Download a package, extract it, and **double-click `AwazSetu.bat`**.
+**Download:** https://drive.google.com/drive/folders/1XU_praP4yQI96gfpGzHaK01Uthx6WYmc?usp=sharing
+
+Take `1-run-it-here/`, run the `JOIN-*.bat`, extract the zip, then **double-click
+`AwazSetu.bat`**. To pair the models with *this* repository instead, take
+`3-for-developers/` — see `models/README.md`.
 
 That is the entire procedure. There is no Python to install, no `pip`, no FFmpeg, no
 Ollama, no PATH to edit, no administrator rights and no internet — even on a freshly

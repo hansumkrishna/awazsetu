@@ -88,30 +88,30 @@ def build_html(team_no: str) -> str:
     # Render a visible marker when a required value has not been supplied, so the pack
     # cannot be sent out silently carrying a blank or an invented one.
     tno = f" [{team_no}]" if team_no else f' <span class="todo">[{TODO_TEAM}]</span>'
-    # Owners arrive as "Name <email>; Name <email>" or "Name - email; ...".
-    # Render names on the cover and a proper name/contact table in the handover,
-    # rather than one run-on line that reads like an afterthought.
+    # Owners arrive as "Name <email> | Role; Name <email> | Role".
+    # Both the email and the role are optional, so a bare list of names still works.
     owners = D.OWNERS
     people = []
     for chunk in (owners or "").replace(";", "\n").splitlines():
         chunk = chunk.strip().rstrip(",")
         if not chunk:
             continue
+        role = ""
+        if "|" in chunk:
+            chunk, role = chunk.split("|", 1)
+            chunk, role = chunk.strip(), role.strip()
         nm, em = chunk, ""
-        for sep in ("<", " - ", " — ", ","):
+        for sep in ("<", " - ", " — "):
             if sep in chunk:
                 nm, em = chunk.split(sep, 1)
                 break
-        people.append((nm.strip(), em.strip().strip("<>").strip()))
-    owners_html = (", ".join(e(n) for n, _ in people) if people
+        people.append((nm.strip(), em.strip().strip("<>").strip(), role))
+    owners_html = (", ".join(e(n) for n, _e, _r in people) if people
                    else f'<span class="todo">{TODO_OWNERS}</span>')
-    # Match the technical owner by name, not by position in the list — a reordered
-    # --owners argument should not silently reassign who owns the code.
-    tech_owner = os.environ.get("AWAZ_TECH_OWNER", "Hansum").lower()
     owner_rows = "".join(
-        f"<tr><td>{e(n)}</td><td><code>{e(em)}</code></td>"
-        f"<td>{'Technical owner — pipeline, models, packaging, this pack' if tech_owner in n.lower() else 'Team member'}</td></tr>"
-        for n, em in people) or (
+        f"<tr><td>{e(n)}</td><td>{('<code>' + e(em) + '</code>') if em else '—'}</td>"
+        f"<td>{e(r) if r else 'Team member'}</td></tr>"
+        for n, em, r in people) or (
         f'<tr><td colspan="3"><span class="todo">{TODO_OWNERS}</span></td></tr>')
     pending = ([] if team_no else ["team number"]) + ([] if owners else ["owners / contacts"])
     gpu_name = (hw.get("gpu") or {}).get("name", "no discrete GPU")
@@ -573,6 +573,16 @@ voices, both assistant models, and the complete processed library</td>
 <td>LITE plus Whisper large-v3, tiny and base, the NLLB fallback engine, and a rescue kit of pinned
 wheels and a Python installer</td><td>USB hand-over and long-term custody</td></tr>
 </table>
+
+<h3>Where to get it</h3>
+<p>The repository carries code and documentation. The models, the embedded runtime and the
+processed library are 15&nbsp;GB of binaries and are published separately:</p>
+<p style="text-align:center;margin:3mm 0"><b>https://drive.google.com/drive/folders/1XU_praP4yQI96gfpGzHaK01Uthx6WYmc?usp=sharing</b></p>
+<p class="small">Three alternatives, not a sequence. <code>1-run-it-here</code> is complete
+and standalone and is what most people want; <code>2-everything</code> adds the spare models
+and a rescue kit; <code>3-for-developers</code> is models only, to pair with a clone of the
+repository. Each arrives as ~1.9&nbsp;GB parts with a join script and a SHA-256 per part, so a
+bad download is caught before it costs an evening.</p>
 
 <h3>Run steps</h3>
 <ol>

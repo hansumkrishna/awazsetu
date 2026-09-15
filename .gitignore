@@ -56,3 +56,7 @@ desktop.ini
 
 # stray tilde dir from an unexpanded shell path
 /~/
+
+# pitch deck + superseded one-off tooling — not part of the product
+/generate_deck.py
+/AwazSetu_Deck.pptx
