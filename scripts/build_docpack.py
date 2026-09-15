@@ -17,7 +17,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
 import docpack_data as D                                   # noqa: E402
-from docpack_data import e, ARCH_SVG, TEAM, OWNERS, REPO   # noqa: E402
+from docpack_data import (e, ARCH_SVG, TEAM, REPO,   # noqa: E402
+                          TODO_TEAM, TODO_OWNERS)
 
 CSS = """
 @page { size: A4; margin: 17mm 15mm 16mm 15mm;
@@ -53,6 +54,8 @@ pre { background: #f7f6f3; border: 1px solid #e7e6e1; border-radius: 4px; paddin
 svg { width: 100%; height: auto; }
 .small { font-size: 8.4pt; color: #666; }
 .why { font-size: 7.6pt; color:#555; }
+.todo { background:#fff3cd; border:1px solid #d9a441; color:#8a5a00; border-radius:3px;
+        padding:0 1.6mm; font-weight:700; letter-spacing:.2px; }
 """
 
 
@@ -82,7 +85,12 @@ def build_html(team_no: str) -> str:
     rtf_med = statistics.median(rtfs) if rtfs else None
 
     today = datetime.now().strftime("%d %B %Y")
-    tno = f" [{team_no}]" if team_no else ""
+    # Render a visible marker when a required value has not been supplied, so the pack
+    # cannot be sent out silently carrying a blank or an invented one.
+    tno = f" [{team_no}]" if team_no else f' <span class="todo">[{TODO_TEAM}]</span>'
+    owners = D.OWNERS
+    owners_html = e(owners) if owners else f'<span class="todo">{TODO_OWNERS}</span>'
+    pending = ([] if team_no else ["team number"]) + ([] if owners else ["owners / contacts"])
     gpu_name = (hw.get("gpu") or {}).get("name", "no discrete GPU")
 
     lib_rows = "".join(
@@ -128,7 +136,7 @@ def build_html(team_no: str) -> str:
     size_full = sizes.get("full", 0) / 1e9
 
     return f"""<!doctype html><html><head><meta charset="utf-8">
-<title>BAIF_Hackathon_{TEAM.replace(' ','')}{tno}_DocumentationPack</title>
+<title>BAIF_Hackathon_{TEAM.replace(' ','')}_DocumentationPack</title>
 <style>{CSS}</style></head><body>
 
 <div class="cover">
@@ -137,9 +145,11 @@ def build_html(team_no: str) -> str:
   for Hindi, Marathi, English and Odia</div>
   <div class="rule"></div>
   <div class="sub" style="font-size:10.5pt">BAIF Hackathon — Final Assessment<br>Documentation Pack</div>
+  {("<div style='margin-top:9mm'><span class=todo>DRAFT — still to complete before sending: "
+    + ", ".join(pending) + "</span></div>") if pending else ""}
   <div class="meta">
-    <b>Team {e(TEAM)}{e(tno)}</b><br>
-    {e(OWNERS)}<br>
+    <b>Team {e(TEAM)}{tno}</b><br>
+    {owners_html}<br>
     {e(today)}<br><br>
     <span class="small">Every figure in this document was generated from the running system by
     <code>scripts/build_docpack.py</code>.<br>
@@ -517,8 +527,8 @@ at the next upload.</p>
 <h3>Ownership and contacts</h3>
 <table>
 <tr><th>Role</th><th>Who</th><th>Scope</th></tr>
-<tr><td>Technical owner</td><td>{e(OWNERS)}</td><td>Pipeline, models, packaging, this pack</td></tr>
-<tr><td>Team</td><td>{e(TEAM)}{e(tno)}</td><td>BAIF Hackathon submission</td></tr>
+<tr><td>Technical owner</td><td>{owners_html}</td><td>Pipeline, models, packaging, this pack</td></tr>
+<tr><td>Team</td><td>{e(TEAM)}{tno}</td><td>BAIF Hackathon submission</td></tr>
 <tr><td>Receiving organisation</td><td>BAIF</td><td>Operation, content curation, glossary ownership</td></tr>
 </table>
 
@@ -630,10 +640,12 @@ def main():
     for i, a in enumerate(sys.argv):
         if a == "--team" and i + 1 < len(sys.argv):
             team_no = sys.argv[i + 1]
+        if a == "--owners" and i + 1 < len(sys.argv):
+            D.OWNERS = sys.argv[i + 1]
     out_dir = os.path.join(REPO, "dist")
     os.makedirs(out_dir, exist_ok=True)
     stem = (f"BAIF_Hackathon_{TEAM.replace(' ', '')}"
-            + (f"[{team_no}]" if team_no else "") + "_DocumentationPack")
+            + (f"[{team_no}]" if team_no else "[TBD]") + "_DocumentationPack")
     safe = stem.replace("[", "_").replace("]", "")
     html_path = os.path.join(out_dir, safe + ".html")
     doc = build_html(team_no)

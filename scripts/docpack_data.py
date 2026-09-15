@@ -35,8 +35,20 @@ os.environ.setdefault("HF_HUB_OFFLINE", "1")
 os.environ.setdefault("TRANSFORMERS_OFFLINE", "1")
 
 TEAM = "Fluent Fusion"
+
+# Placeholders, not guesses. The submission requires a team number and a contacts
+# line that only the team can supply, so the pack renders visible TO-BE-COMPLETED
+# markers rather than inventing plausible-looking values that could be submitted by
+# accident. Fill them in with one command:
+#
+#   python scripts/build_docpack.py --team 4 --owners "Name (role), name@example.com" --pdf
+#
+# or by setting AWAZ_TEAM_NO / AWAZ_OWNERS in the environment.
+TODO_TEAM = "TO BE COMPLETED — team number"
+TODO_OWNERS = "TO BE COMPLETED — owner name, role and contact"
+
 TEAM_NO = os.environ.get("AWAZ_TEAM_NO", "")
-OWNERS = os.environ.get("AWAZ_OWNERS", "Hansum Krishna (technical owner)")
+OWNERS = os.environ.get("AWAZ_OWNERS", "")
 
 
 def e(s):
