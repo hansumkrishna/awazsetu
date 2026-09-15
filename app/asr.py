@@ -195,8 +195,21 @@ def is_degenerate(text: str, lang: str) -> tuple[bool, str]:
     letters = [c for c in t if c.isalpha()]
     if not letters:
         return True, "no-letters"
-    # 1) hardly any distinct characters -> degenerate loop
-    if len(t) >= 20 and len(set(letters)) / max(1, len(letters)) < 0.12:
+    # 1) hardly any distinct characters -> degenerate loop.
+    # ABSOLUTE, not a ratio. Latin has only 26 letters, so a long English sentence
+    # legitimately has a low distinct/total ratio: "Several inputs used in agriculture
+    # have a significant bearing on the results achieved..." scores 24 distinct of 218
+    # letters = 0.11, under the old 0.12 threshold. That deleted the only segment of an
+    # English item and left it with empty subtitles and a silent voiceover. A real loop
+    # has a handful of distinct characters however long it runs ("ব" x60 has one).
+    # Length matters as much as variety: garbage is LONG with few distinct characters,
+    # whereas a short real phrase is legitimately narrow. "35-36 डिगरी गरम पानी" has
+    # only 6 distinct letters because Devanagari vowel signs are marks, not letters,
+    # and flagging it would delete a correct subtitle.
+    uniq, n = len(set(letters)), len(letters)
+    if n >= 25 and uniq <= 6:
+        return True, "low-diversity"
+    if n >= 12 and uniq <= 2:          # a run of one or two characters, at any length
         return True, "low-diversity"
     # 1b) many words but few DISTINCT words -> a phrase-level decoder loop.
     # Character diversity stays normal when a whole phrase repeats, so the check
