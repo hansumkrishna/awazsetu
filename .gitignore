@@ -53,3 +53,6 @@ desktop.ini
 
 # --- built distribution packages ---
 /dist/
+
+# stray tilde dir from an unexpanded shell path
+/~/
