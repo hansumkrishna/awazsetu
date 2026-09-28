@@ -1,6 +1,6 @@
 # AwazSetu — Test Evidence
 
-**128/128 passed**
+**134/134 passed**
 
 | Suite | Case | Lang | Result | Time | Detail |
 |---|---|---|---|---|---|
@@ -94,41 +94,47 @@
 | assets | subtitle:401.2 HOUSING OF GOAT.mp4 | or | PASS |  | 10813B |
 | assets | all-langs-translated:401.2 HOUSING OF GOAT.mp4 | all | PASS |  | 39 segments |
 | assets | asr-confidence:401.2 HOUSING OF GOAT.mp4 | mr | PASS |  | mean_logprob=-0.118 |
-| chat | on-topic | hi | PASS | 42.1 | यह वीडियो बकरियों में माडल रोग (शेफ पोक्स) के लक्षणों, कारणों और उपचार के बारे में है, जिसमें रोकथाम और नियंत्रण उपायों को शामिल किया गया है। |
-| chat | on-topic | mr | PASS | 33.5 | या व्हिडिओमध्ये मदील रोगावर लक्ष केंद्रित करून, शेळींवर परिणाम करणारे विविध रोग, लक्षणे, कारणे आणि उपचार यांचा समावेश आहे. |
-| chat | on-topic | en | PASS | 26.9 | This video is about the treatment and prevention of diseases in goats, including specific diseases like hemorrhagic septicemia and enterotoxemia, and  |
-| chat | on-topic | or | PASS | 39.5 | ଏହି ଭିଡିଓରେ ଛେଳିମାନଙ୍କଠାରେ ରୋଗର ବୁଝିବା ଏବଂ ଚିକିତ୍ସା ବିଷୟରେ ଆଲୋଚନା କରାଯାଇଛି, ଯେଉଁଥିରେ ଏହାର ଲକ୍ଷଣ, କାରଣ ଏବଂ ସଂକ୍ରାମକ ଏବଂ ଅଣସଂକ୍ରାମକ ରୋଗରେ ବର୍ଗୀକରଣ ରହିଛି |
-| refusal | offtopic-refused | hi | PASS | 28.6 | इस वीडियो में इसकी जानकारी नहीं है। सबसे नज़दीकी पंक्तियाँ नीचे दी गई हैं। |
-| refusal | offtopic-refused | mr | PASS | 27.3 | या व्हिडिओमध्ये याची माहिती नाही. सर्वात जवळच्या ओळी खाली दिल्या आहेत. |
-| refusal | offtopic-refused | en | PASS | 23.2 | This video does not cover that. The closest lines I found are below. |
-| refusal | offtopic-refused | or | PASS | 27.8 | ଏହି ଭିଡିଓରେ ସେ ବିଷୟରେ କିଛି ନାହିଁ। ନିକଟତମ ଧାଡ଼ିଗୁଡ଼ିକ ତଳେ ଦିଆଯାଇଛି। |
-| dub | voiceover | hi | PASS |  | cached 22131KB |
-| dub | voiceover | mr | PASS |  | cached 22131KB |
-| dub | voiceover | en | PASS |  | cached 22131KB |
-| dub | voiceover | or | PASS |  | cached 22131KB |
-| voice | tts | hi | PASS | 5.2 | 71KB |
-| voice | stt | hi | PASS | 6.7 | यह वीएो किस मारे में है। |
-| voice | tts | mr | PASS | 4.5 | 71KB |
-| voice | stt | mr | PASS | 6.4 | हा विर्यु कशा बुद़्ला है. |
-| voice | tts | en | PASS | 4.6 | 71KB |
-| voice | stt | en | PASS | 5.3 | What is this video about? |
-| voice | tts | or | PASS | 4.3 | 47KB |
-| voice | stt | or | PASS | 7.2 | लेई भिरी रो क्यों बिश है |
+| i18n | catalogue-complete | hi | PASS |  | 140 keys, 0 missing |
+| i18n | catalogue-complete | mr | PASS |  | 140 keys, 0 missing |
+| i18n | catalogue-complete | or | PASS |  | 140 keys, 0 missing |
+| i18n | no-key-echo | en | PASS |  | 140 strings |
+| i18n | no-key-echo | hi | PASS |  | 140 strings |
+| i18n | no-key-echo | mr | PASS |  | 140 strings |
+| i18n | no-key-echo | or | PASS |  | 140 strings |
+| i18n | unknown-key | - | PASS |  | unknown keys fall through to the key name rather than raising |
+| i18n | differs-from-english | hi | PASS |  | 3 of 140 strings identical to English: ['gd_cpu', 'gd_gpu', 'gd_ram'] |
+| i18n | differs-from-english | mr | PASS |  | 3 of 140 strings identical to English: ['gd_cpu', 'gd_gpu', 'gd_ram'] |
+| i18n | differs-from-english | or | PASS |  | 3 of 140 strings identical to English: ['gd_cpu', 'gd_gpu', 'gd_ram'] |
+| i18n | normalise | - | PASS |  | 6 codes |
+| i18n | page/ | en | PASS |  | HTTP 200, 7/7 strings |
+| i18n | page/ | hi | PASS |  | HTTP 200, 7/7 strings |
+| i18n | page/ | mr | PASS |  | HTTP 200, 7/7 strings |
+| i18n | page/ | or | PASS |  | HTTP 200, 7/7 strings |
+| i18n | page/settings | en | PASS | 0.3 | HTTP 200, 7/7 strings |
+| i18n | page/settings | hi | PASS |  | HTTP 200, 7/7 strings |
+| i18n | page/settings | mr | PASS |  | HTTP 200, 7/7 strings |
+| i18n | page/settings | or | PASS |  | HTTP 200, 7/7 strings |
+| i18n | page/garden | en | PASS | 3.8 | HTTP 200, 6/6 strings |
+| i18n | page/garden | hi | PASS | 0.2 | HTTP 200, 6/6 strings |
+| i18n | page/garden | mr | PASS | 0.2 | HTTP 200, 6/6 strings |
+| i18n | page/garden | or | PASS | 0.2 | HTTP 200, 6/6 strings |
+| i18n | page/watch/<id> | en | PASS |  | HTTP 200, 8/8 strings |
+| i18n | page/watch/<id> | hi | PASS |  | HTTP 200, 8/8 strings |
+| i18n | page/watch/<id> | mr | PASS |  | HTTP 200, 8/8 strings |
+| i18n | page/watch/<id> | or | PASS |  | HTTP 200, 8/8 strings |
+| i18n | switch-applies | mr | PASS |  | cookie=True, strings=140 |
+| i18n | answer-lang-consistent | en | PASS |  | all four offered=True, highlighted=True, used=True |
+| i18n | answer-lang-consistent | hi | PASS |  | all four offered=True, highlighted=True, used=True |
+| i18n | answer-lang-consistent | mr | PASS |  | all four offered=True, highlighted=True, used=True |
+| i18n | answer-lang-consistent | or | PASS |  | all four offered=True, highlighted=True, used=True |
+| paths | writable-install | - | PASS |  | data_root=C:\users\hansu\awazsetu\app\data, items=15 |
+| paths | library-visible | - | PASS |  | 15 processed items |
+| paths | readonly-install | - | PASS |  | library kept=True, work redirected=True, settings redirected=True, write ok=True |
+| paths | restored | - | PASS |  | data_root=C:\users\hansu\awazsetu\app\data |
+| script | detect | - | PASS |  | 7 cases |
+| script | guard | - | PASS |  | 6/6 correct |
 | settings | switch-llm-applies | - | PASS |  | chat._model()=qwen2.5:1.5b |
 | settings | switch-asr-applies | - | PASS |  | AWAZ_WHISPER=small |
 | settings | status-detects-models | - | PASS |  | whisper=['tiny', 'base', 'small', 'medium', 'large-v3'] mms=['hi', 'mr', 'en', 'or'] |
 | settings | guide-present | - | PASS |  | per-language model guidance exposed |
 | settings | restored | - | PASS |  | chat_llm=qwen2.5:3b |
-| platform | ffmpeg_resolves | - | PASS |  | bundled: ffmpeg version 7.1.1-essentials_build-www.gy |
-| platform | embedded_runtime | - | PASS | 3.2 | 3.10.11 2.5.1+cpu |
-| platform | llm_answers | - | PASS | 1.1 | backend=llamacpp model=qwen2.5:3b -> '12 goats.' |
-| platform | offline_enforced | - | PASS |  | HF_HUB_OFFLINE=1 |
-| platform | garden_catalog | - | PASS | 1.7 | 13 models, tasks=['asr', 'llm', 'mt', 'tts'], tier=workstation, presets=4 |
-| platform | presets_honest | - | PASS | 0.1 | every preset's availability matches what is installed |
-| platform | preset_apply_roundtrip | - | PASS | 0.2 | medium -> fast_low_ram=small -> balanced=medium; unknown preset returns 404 |
-| platform | odia_not_a_source | or | PASS |  | langs.py records Odia as target-only; no ASR model claims to read it |
-| media | audio_sources_processed | - | PASS |  | 4 audio item(s), 11 video item(s) |
-| media | source_file_present | - | PASS |  | every manifest points at a real source container |
-| media | odia_subtitles | or | PASS |  | 15/15 items with an Odia target have an Odia track |
-| media | odia_voiceover | or | PASS |  | 15/15 items have an audible Odia voiceover |
-| media | no_subtitleless_items | - | PASS |  | every item has at least one subtitle track |

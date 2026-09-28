@@ -65,3 +65,11 @@ desktop.ini
 /docs/DELIVERY_PLAN.md
 /docs/SUBMISSION.md
 /docs/TASKS.md
+
+# MSIX build output. The packages are gigabytes and the signing key is private:
+# neither belongs in a repository. Both are reproducible with
+# scripts/build_msix.py -- the .cer (public half) IS tracked, because a machine
+# needs it to trust an installer someone hands them.
+installer/*.msix
+installer/cert/
+installer/launcher/*.exe

@@ -132,26 +132,49 @@ def c_llm_answer():
 
 
 def c_library():
-    work = os.path.join(APP, "data", "work")
-    if not os.path.isdir(work):
-        return "FAIL", "app/data/work is missing"
+    # Via paths, not a fixed folder: on a read-only (MSIX) install the library is
+    # the shipped folder PLUS whatever the user has since added elsewhere, and a
+    # check that only looked in one of them would under-report.
+    import paths
     items = full = 0
-    for d in sorted(os.listdir(work)):
-        mf = os.path.join(work, d, "manifest.json")
-        if not os.path.exists(mf):
-            continue
+    for _vid, folder in paths.list_work():
         items += 1
-        m = json.load(open(mf, encoding="utf-8"))
-        fs = os.listdir(os.path.join(work, d))
+        m = json.load(open(os.path.join(folder, "manifest.json"), encoding="utf-8"))
+        fs = os.listdir(folder)
         subs = {f.split(".")[1] for f in fs if f.startswith("subs.")}
         dubs = {f.split(".")[1] for f in fs if f.startswith("dub.")
-                and os.path.getsize(os.path.join(work, d, f)) > 10000}
+                and os.path.getsize(os.path.join(folder, f)) > 10000}
         if set(m.get("langs", [])) <= subs and set(m.get("langs", [])) <= dubs:
             full += 1
     if items == 0:
         return "FAIL", "no processed media — the library will be empty"
     state = "PASS" if full == items else "WARN"
     return state, f"{items} items, {full} complete (subtitles + every voiceover)"
+
+
+def c_storage():
+    """Where this install writes, and whether it actually can.
+
+    Worth a check of its own because the failure is late and confusing: the app
+    starts, the library plays, and then the first Save or the first upload
+    fails. An MSIX install is read-only by design and handled; a .zip extracted
+    somewhere protected is NOT by design and is worth naming now.
+    """
+    import paths
+    d = paths.describe()
+    root = d["data_root"]
+    probe = os.path.join(root, ".doctor-write-test")
+    try:
+        os.makedirs(root, exist_ok=True)
+        with open(probe, "w") as f:
+            f.write("ok")
+        os.remove(probe)
+    except Exception as e:
+        return "FAIL", f"cannot write to {root}: {type(e).__name__}"
+    if d["read_only_install"]:
+        return "PASS", (f"packaged install — library served read-only, new work "
+                        f"and settings in {root}")
+    return "PASS", f"portable install — everything beside the app in {root}"
 
 
 def c_memory():
@@ -188,6 +211,7 @@ def main():
     check("Chat LLM backend", c_llm)
     check("Chat LLM actually answers", c_llm_answer)
     check("Processed library", c_library)
+    check("Writable storage", c_storage)
     check("Memory budget", c_memory)
     check("Offline enforcement", c_offline)
 

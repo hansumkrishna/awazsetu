@@ -42,23 +42,26 @@ chat question. If all four work, the demo is safe.
 
 ## 1. First-time installation (from a clean machine)
 
-```bash
-# 1. dependencies — CPU torch keeps the footprint small
-pip install torch --index-url https://download.pytorch.org/whl/cpu
-REM Nothing to install. The runtime ships with every dependency.
+There is nothing to install. Copy the package folder to the machine and:
 
-# 2. one-time model download (~6 GB into ./models/). Needs network ONCE.
-python scripts/download_models.py
-
-# 3. chat model
-REM Nothing to pull. Both assistant models ship as GGUF in models\llm\.
-
-# 4. run — offline from here on
-python app/run.py
+```bat
+AwazSetu-Check.bat     REM preflight — must print READY
+AwazSetu.bat           REM start; a browser opens at http://127.0.0.1:5000
 ```
 
-Elapsed on a typical connection: ~20–30 min, almost all of it model download.
-Steps 1–3 are one-time; step 4 is the daily start command.
+Elapsed: **about five minutes, almost all of it copying files.** No Python, no pip,
+no FFmpeg, no Ollama, no PATH edit, no administrator rights, no network. The embedded
+interpreter is in `runtime\python\`, FFmpeg in `runtimein\`, every model in
+`models\`, and `HF_HUB_OFFLINE=1` makes a download impossible even if a network is
+present.
+
+If it must look like an installed Windows application — Start Menu entry, proper
+uninstall, Intune deployment — use the MSIX in `installer\` instead. That one does
+need a single administrator prompt, to trust its signing certificate; see
+`installer/README.md`. The two are alternatives, not steps.
+
+`scripts/download_models.py` still exists and still needs a network, but only for
+rebuilding the model set from source. Running the application never calls it.
 
 ---
 
@@ -67,6 +70,35 @@ Steps 1–3 are one-time; step 4 is the daily start command.
 All settings live in `app/settings.json`, edited through **/settings** in the browser.
 The page is **select-only and offline** — it never downloads, it only switches between
 what is already installed.
+
+### Interface language
+
+The whole interface exists in Hindi, Marathi, English and Odia. Three things control it,
+in this order of precedence:
+
+| | Set by | Scope |
+|---|---|---|
+| `awaz_ui_lang` cookie | the picker on the home page, or the Settings dropdown | that browser |
+| `ui_lang` in `settings.json` | Settings, and whatever the picker last chose | the machine's default |
+| the browser's own `Accept-Language` | the browser | first visit only |
+
+The cookie wins deliberately: a shared field laptop must let the person in front of it
+switch language without rewriting the operator's default. The picker appears on every
+visit to the home page for the same reason; turn that off with **Ask for the language on
+the home page** in Settings if the laptop has one owner.
+
+The chosen language also becomes the default language for chat answers and spoken
+replies, so one choice covers reading, listening and asking.
+
+### Where data is written
+
+On the `.zip` package, everything stays beside the application in `app\data\` — the
+folder is self-contained and deleting it uninstalls everything.
+
+On the MSIX package the install directory is read-only, so the fifteen shipped items are
+served from where they land and anything new goes to `%LOCALAPPDATA%\AwazSetu`. Both
+appear together in one library. `scripts\doctor.py` reports which mode is in effect
+under **Writable storage**.
 
 Every setting maps to an environment variable, so it can also be forced from the shell:
 

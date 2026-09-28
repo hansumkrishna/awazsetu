@@ -7,6 +7,11 @@ An offline desktop application that transcribes, translates, subtitles and dubs 
 audio across **Hindi · Marathi · English · Odia**, and lets you *ask the video questions*
 by typing or by speaking, getting a grounded answer in your own language.
 
+The application itself speaks all four too. Every button, label and message is
+translated, and the home page asks which language you want before you touch anything —
+so a shared field laptop serves the next person in their language, not the last
+person's.
+
 Everything runs on-device on a modest laptop (target: Intel i5 11th gen / Ryzen 5,
 16 GB RAM, no GPU) with **zero network calls at runtime** — the process cannot reach a
 network even if one is present.
@@ -25,7 +30,12 @@ Take `1-run-it-here/`, run the `JOIN-*.bat`, extract the zip, then **double-clic
 
 That is the entire procedure. There is no Python to install, no `pip`, no FFmpeg, no
 Ollama, no PATH to edit, no administrator rights and no internet — even on a freshly
-imaged Windows machine. An embedded Python 3.10 and FFmpeg live in `runtime/`, and every
+imaged Windows machine.
+
+There is also a Windows **MSIX installer** in `installer/`, for when it needs a Start
+Menu entry, a proper uninstall, or deployment through Intune. It costs one
+administrator prompt to trust its signing certificate; the `.zip` above costs nothing
+and is still the right choice on a locked-down laptop. See `installer/README.md`. An embedded Python 3.10 and FFmpeg live in `runtime/`, and every
 model ships in `models/`. Nothing is written outside the folder; deleting the folder
 uninstalls it completely.
 
@@ -44,6 +54,7 @@ budget, then prints READY or names exactly what is wrong.
 | **Ask the video** | BM25 retrieval + a local LLM that answers *only* from the transcript, and refuses when the fact is absent |
 | **Voice chat** | tap the mic, ask out loud, hear the answer — the literacy unlock |
 | **Model Garden** | every model scored per language and per task against *your* machine, with one-click presets |
+| **Four-language interface** | the app itself in Hindi, Marathi, English or Odia — chosen on arrival, changeable any time |
 
 **Everything a viewer consumes is computed once, at ingest, behind a progress bar** — the
 transcript, all four subtitle tracks and all four full-length voiceovers are on disk before
@@ -109,6 +120,6 @@ degrades one feature rather than the application.
 
 ## Documentation
 
-`docs/` holds the runbook, handover and training plan, test evidence, the delivery plan and
-the comparison against Bhashini. The BAIF submission pack is generated from the live system
-by `scripts/build_docpack.py` — every figure in it is read from the repository, not typed in.
+`docs/` holds the runbook, the handover and training plan, the test evidence, the
+comparison against Bhashini, and the offline install guide. `installer/README.md` covers
+the MSIX packages.

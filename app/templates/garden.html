@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ UI }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Model Garden — AwazSetu</title>
+<title>{{ T.nav_garden }} — AwazSetu</title>
 <style>
   :root { --red:#c0272d; --ink:#1a1a1a; --mut:#6b6b6b; --line:#e7e7e7; --bg:#f6f6f4;
           --q5:#1a7f37; --q4:#4a9c5d; --q3:#c99a2e; --q2:#d9762b; --q1:#b01c24; --qna:#e9e9e6; }
@@ -91,49 +91,45 @@
 </head>
 <body>
 <header>
-  <div class="logo"></div><b>AwazSetu</b><span class="tag">· Model Garden</span>
-  <nav><a href="/">← Library</a><a href="/settings">⚙ Settings</a></nav>
+  <div class="logo"></div><b>AwazSetu</b><span class="tag">· {{ T.nav_garden }}</span>
+  <nav><a href="/">← {{ T.nav_library }}</a><a href="/settings">⚙ {{ T.nav_settings }}</a></nav>
 </header>
 
 <div class="wrap">
-  <h1>Model Garden</h1>
+  <h1>{{ T.nav_garden }}</h1>
   <p class="lede">
-    Every model this build can use, scored per language and measured against the machine
-    it is running on. Scores are 1–5. A dash means the model <em>cannot</em> do that
-    language at all — which is different from doing it badly. Rows marked
-    <span class="m">measured</span> come from this project's own media; the rest reflect
-    published behaviour.
+    {{ T.gd_lede }} {{ T.set_guide_sub }}
   </p>
 
   <!-- ------------------------------------------------ your machine -->
-  <h3>This machine</h3>
+  <h3>{{ T.gd_machine }}</h3>
   <div class="card machine">
-    <div class="stat"><div class="k">Tier</div>
+    <div class="stat"><div class="k">{{ T.gd_tier }}</div>
       <div class="v"><span class="tierbadge">{{ g.hardware.tier_label }}</span></div>
       <div class="s">{{ g.hardware.tier_note }}</div></div>
-    <div class="stat"><div class="k">Memory</div>
+    <div class="stat"><div class="k">{{ T.gd_memory }}</div>
       <div class="v">{{ g.hardware.total_ram_gb or '?' }} GB</div>
-      <div class="s">{{ g.hardware.free_ram_mb or '?' }} MB free now</div></div>
-    <div class="stat"><div class="k">CPU</div>
+      <div class="s">{{ g.hardware.free_ram_mb or '?' }} MB {{ T.gd_free_now }}</div></div>
+    <div class="stat"><div class="k">{{ T.gd_cpu }}</div>
       <div class="v">{{ g.hardware.cores or '?' }} threads</div>
-      <div class="s">everything runs on CPU by default</div></div>
-    <div class="stat"><div class="k">GPU</div>
+      <div class="s">{{ T.gd_cpu_note }}</div></div>
+    <div class="stat"><div class="k">{{ T.gd_gpu }}</div>
       {% if g.hardware.gpu %}
         <div class="v">{{ g.hardware.gpu.vram_gb }} GB</div>
         <div class="s">{{ g.hardware.gpu.name }}</div>
       {% else %}
-        <div class="v">None</div><div class="s">CPU-only — the supported baseline</div>
+        <div class="v">{{ T.gd_none }}</div><div class="s">{{ T.gd_gpu_none }}</div>
       {% endif %}</div>
-    <div class="stat"><div class="k">Free disk</div>
+    <div class="stat"><div class="k">{{ T.gd_disk }}</div>
       <div class="v">{{ g.hardware.free_disk_gb or '?' }} GB</div>
-      <div class="s">{{ '%.1f'|format(g.total_disk_mb/1024) }} GB of models installed</div></div>
+      <div class="s">{{ '%.1f'|format(g.total_disk_mb/1024) }} GB {{ T.gd_installed_disk }}</div></div>
   </div>
 
   <!-- ------------------------------------------------ the preference matrix -->
-  <h3>What to use — for this machine</h3>
+  <h3>{{ T.gd_bestfor }}</h3>
   <div class="scroller">
   <table class="best">
-    <thead><tr><th>Task</th>
+    <thead><tr><th>{{ T.gd_task }}</th>
       {% for code, L in g.langs.items() %}<th>{{ L.native }} <span class="lc">{{ L.name }}</span></th>{% endfor %}
     </tr></thead>
     <tbody>
@@ -167,17 +163,17 @@
   </p>
 
   <!-- ------------------------------------------------ presets -->
-  <h3>One-click presets</h3>
+  <h3>{{ T.gd_presets }}</h3>
   <div class="presets">
     {% for key, p in g.presets.items() %}
     <div class="preset {% if key == g.recommended %}rec{% endif %}">
       <div class="pt">{{ p.label }}
-        {% if key == g.recommended %}<span class="pill">RECOMMENDED</span>{% endif %}</div>
+        {% if key == g.recommended %}<span class="pill">{{ T.gd_recommended }}</span>{% endif %}</div>
       <div class="pw">{{ p.why }}</div>
       <dl>
-        <dt>Transcribe</dt><dd>{{ p.settings.asr_model }}</dd>
-        <dt>Translate</dt><dd>{{ p.settings.translate_engine }}</dd>
-        <dt>Chat</dt><dd>{{ p.settings.chat_llm }}</dd>
+        <dt>{{ T.gd_transcribe }}</dt><dd>{{ p.settings.asr_model }}</dd>
+        <dt>{{ T.gd_translate }}</dt><dd>{{ p.settings.translate_engine }}</dd>
+        <dt>{{ T.gd_chat }}</dt><dd>{{ p.settings.chat_llm }}</dd>
         <dt>Peak RAM</dt><dd>{{ '%.1f'|format(p.budget.peak_mb/1024) }} GB</dd>
       </dl>
       {% set cap = (g.hardware.total_ram_gb or 16) * 1024 %}
@@ -196,14 +192,14 @@
   </div>
 
   <!-- ------------------------------------------------ the matrix -->
-  <h3>Quality by language</h3>
+  <h3>{{ T.gd_quality }}</h3>
   <div class="scroller">
   <table>
     <thead>
       <tr>
-        <th>Model</th>
+        <th>{{ T.gd_model }}</th>
         {% for code, L in g.langs.items() %}<th title="{{ L.name }}">{{ L.native }}</th>{% endfor %}
-        <th>Speed</th><th>RAM</th><th>Disk</th><th>Load</th><th>Licence</th><th>Status</th><th>Why / when</th>
+        <th>{{ T.gd_speed }}</th><th>{{ T.gd_ram }}</th><th>{{ T.gd_disk }}</th><th>{{ T.gd_load }}</th><th>{{ T.gd_licence }}</th><th>{{ T.gd_status }}</th><th>{{ T.gd_why }}</th>
       </tr>
     </thead>
     <tbody>
@@ -224,9 +220,9 @@
           <td class="num">{{ r.load_s }} s</td>
           <td><span class="lic {% if 'NC' in r.licence %}nc{% endif %}">{{ r.licence }}</span></td>
           <td>
-            {% if r.installed %}<span class="badge ok">installed</span>
-            {% else %}<span class="badge no">not installed</span>{% endif %}
-            {% if not r.fits %}<span class="badge warn" title="needs {{ r.min_ram_gb }} GB RAM">tight</span>{% endif %}
+            {% if r.installed %}<span class="badge ok">{{ T.gd_installed }}</span>
+            {% else %}<span class="badge no">{{ T.gd_notinstalled }}</span>{% endif %}
+            {% if not r.fits %}<span class="badge warn" title="needs {{ r.min_ram_gb }} GB RAM">{{ T.gd_tight }}</span>{% endif %}
           </td>
           <td class="why">{{ r.note }}</td>
         </tr>
@@ -237,24 +233,13 @@
   </div>
 
   <div class="legend">
-    <span><span class="q q5">5</span> excellent</span>
-    <span><span class="q q4">4</span> good</span>
-    <span><span class="q q3">3</span> usable</span>
-    <span><span class="q q2">2</span> poor</span>
-    <span><span class="q q1">1</span> unusable</span>
-    <span><span class="q qna">—</span> not supported by this model</span>
+    <span>{{ T.gd_legend }}</span>
   </div>
 
   <p class="foot">
-    <b>Why Odia has no transcription score.</b> faster-whisper has no Odia token, so no
-    ASR model here can transcribe Odia speech — every ASR row is a dash for
-    {{ g.langs['or'].native }}. Odia is still a first-class output: Marathi or Hindi
-    speech is transcribed, translated by IndicTrans2, then spoken by the Odia voice.
-    That is the common BAIF case — a Marathi field video for an Odia audience.
+    <b>{{ T.gd_odia_title }}</b> {{ T.gd_odia_body }}
     <br><br>
-    <b>Nothing here downloads anything.</b> The Garden reports only what is on this
-    disk. A model shown as “not installed” is present in the FULL package; it is never
-    fetched at runtime.
+    <b>{{ T.gd_nodl }}</b> {{ T.gd_nodl_body }}
   </p>
 </div>
 

@@ -57,7 +57,58 @@ STR_LOW_ASR = {
     "or": "ଦ୍ରଷ୍ଟବ୍ୟ: ଅଡିଓ ସ୍ପଷ୍ଟ ନ ଥିବାରୁ ଏହି ଉତ୍ତର ଅନୁମାନିକ ହୋଇପାରେ।",
 }
 
+STR_UNTRANSLATED = {
+    "en": "",
+    "hi": "(अनुवाद उपलब्ध नहीं हो सका, इसलिए उत्तर अंग्रेज़ी में है।)",
+    "mr": "(भाषांतर होऊ शकले नाही, त्यामुळे उत्तर इंग्रजीत आहे.)",
+    "or": "(ଅନୁବାଦ ହୋଇପାରିଲା ନାହିଁ, ତେଣୁ ଉତ୍ତର ଇଂରାଜୀରେ ଅଛି।)",
+}
+
+# ---------------------------------------------------------------------------
+# Script checking. The reported bug was "Hindi is selected but the answer comes
+# back in English" — a SILENT failure, because a translation that returned None
+# fell through to the English text and looked like a normal answer. Scripts are
+# decidable from Unicode alone, with no model and no guessing, so the answer is
+# now checked before it is returned.
+#
+# It cannot separate Hindi from Marathi (both Devanagari) and does not try to.
+# That pair is kept correct by passing the right FLORES tag, which the interface
+# now guarantees. What this catches is the failure that actually happened:
+# untranslated Latin text presented as though it were Hindi.
+# ---------------------------------------------------------------------------
+_DEVA = re.compile(r"[\u0900-\u097F]")   # Devanagari: Hindi, Marathi
+_ORYA = re.compile(r"[\u0B00-\u0B7F]")   # Oriya: Odia
+_LATIN = re.compile(r"[A-Za-z]")
+SCRIPT_OF = {"hi": "deva", "mr": "deva", "en": "latin", "or": "orya"}
+
+
+def script_of(text: str) -> str:
+    """The dominant script of a string: deva | orya | latin | none.
+
+    Counted rather than merely detected, because a Hindi answer legitimately
+    contains Latin characters — "RTF", "AI", a breed name — and a single one of
+    those must not make the string look English.
+    """
+    if not text:
+        return "none"
+    d, o, l = len(_DEVA.findall(text)), len(_ORYA.findall(text)), len(_LATIN.findall(text))
+    if d == o == l == 0:
+        return "none"
+    return {d: "deva", o: "orya", l: "latin"}[max(d, o, l)]
+
+
+def in_target_script(text: str, lang: str) -> bool:
+    want = SCRIPT_OF.get(lang)
+    got = script_of(text)
+    return got == "none" or want is None or got == want
+
+
 _bm25_cache: dict[str, tuple] = {}
+# Chat re-asks the same things constantly ("what is this about?"), and every miss
+# costs a subprocess that loads a 200M checkpoint. Bounded so a long session
+# cannot grow it without limit.
+_mt_cache: dict[tuple, str] = {}
+_MT_CACHE_MAX = 512
 
 
 def _tok(s: str) -> list[str]:
@@ -138,16 +189,105 @@ def _mt_run(text: str, src: str, tgt: str, engine: str) -> str | None:
 
 
 def _mt(text: str, src: str, tgt: str) -> str | None:
-    """Translate one string out-of-process. Prefers the configured engine, then NLLB
-    (ungated, covers every hi/mr/en direction)."""
+    """Translate one string out-of-process, and only accept a plausible result.
+
+    Two changes over "call the engine and hope". First, a result in the wrong
+    script is treated as a FAILURE and the next engine is tried: IndicTrans2 can
+    return the input unchanged for a direction whose checkpoint is missing, and
+    that echo previously became the answer. Second, every failure is logged, so
+    an English answer where Hindi was asked for leaves a trace instead of being
+    indistinguishable from a correct one.
+    """
     if src == tgt or not text.strip():
         return text
+    ck = (text, src, tgt)
+    hit = _mt_cache.get(ck)
+    if hit is not None:
+        return hit
     engines = dict.fromkeys([os.environ.get("AWAZ_CHAT_MT", "nllb").lower(), "nllb"])
     for engine in engines:
         r = _mt_run(text, src, tgt, engine)
-        if r:
+        if r and r.strip() and in_target_script(r, tgt):
+            if len(_mt_cache) >= _MT_CACHE_MAX:
+                _mt_cache.clear()
+            _mt_cache[ck] = r
             return r
+        if r:
+            _log(f"{engine} {src}->{tgt} produced {script_of(r)} script, rejected")
+        else:
+            _log(f"{engine} {src}->{tgt} returned nothing")
     return None
+
+
+def _log(msg: str) -> None:
+    try:
+        import sys
+        print(f"[chat] {msg}", file=sys.stderr, flush=True)
+    except Exception:
+        pass
+
+
+def _to_lang(text: str, lang: str, src_hint: str = "hi") -> tuple[str, bool]:
+    """Render an answer in `lang`, returning (text, translated_cleanly).
+
+    The model is asked to reason in English and usually does, but not always —
+    a small model handed a Devanagari transcript sometimes answers in Devanagari.
+    Feeding that to an en->hi engine as though it were English produced the worst
+    output of all, so the script is established first and the text is routed
+    accordingly:
+
+      already in the target script, and unambiguous  -> use it as-is
+      in some other Indic script                     -> normalise via English
+      English                                        -> the ordinary path
+
+    Odia is unambiguous because nothing else in this app uses the Oriya block.
+    Devanagari is not — Hindi and Marathi share it — so Devanagari output is sent
+    back through English rather than being assumed to be whichever was asked for.
+    """
+    text = (text or "").strip()
+    if not text:
+        return text, True
+    got = script_of(text)
+    if lang == "en":
+        if got == "latin" or got == "none":
+            return text, True
+        out = _mt(text, src_hint, "en")
+        return (out, True) if out else (text, False)
+
+    if got == "orya" and lang == "or":
+        return text, True                      # Oriya script implies Odia
+
+    if got in ("deva", "orya"):
+        # Normalise through English so Hindi and Marathi cannot be confused.
+        # The source tag must be a language that actually writes this script: the
+        # video's own language when it fits, and Hindi as the Devanagari default
+        # otherwise. Passing "en" here would make the engine a no-op and send
+        # Devanagari onward labelled as English, which is the mistake this whole
+        # function exists to prevent.
+        src = src_hint if SCRIPT_OF.get(src_hint) == got else (
+            "hi" if got == "deva" else "or")
+        via = _mt(text, src, "en")
+        if not via:
+            # Could not normalise. If it is at least in the right script, that is
+            # a better answer than anything further processing can produce.
+            _log(f"could not normalise {got} output via English for {lang}")
+            return text, in_target_script(text, lang)
+        text = via
+
+    out = _mt(text, "en", lang)
+    if out and in_target_script(out, lang):
+        return out, True
+    _log(f"could not render the answer in {lang}; returning English")
+    return text, False
+
+
+def _question_to_en(q: str, lang: str, src_hint: str = "hi") -> str:
+    """Whatever the person typed, in English, for the model to reason over."""
+    sc = script_of(q)
+    if sc in ("latin", "none"):
+        return q                                  # already English, or just digits
+    src = lang if SCRIPT_OF.get(lang) == sc else ("or" if sc == "orya" else src_hint)
+    return _mt(q, src, "en") or q
 
 
 def _fmt_segs(ss, prefer: str = "en") -> str:
@@ -187,7 +327,10 @@ def answer(m: dict, q: str, lang: str = "hi", history: list | None = None) -> di
         ctx = "FULL TRANSCRIPT:\n" + whole
 
     # Reason in English (the small model's strongest language), then translate out.
-    q_en = q if lang == "en" else (_mt(q, lang, "en") or q)
+    # Routed by the script the question is WRITTEN in, not by the language chosen
+    # for answers: someone running the app in Hindi still types English questions
+    # half the time, and feeding English to an hi->en engine mangled them.
+    q_en = _question_to_en(q, lang, m.get("src_lang", "hi"))
 
     try:
         from glossary import terms_table
@@ -208,7 +351,9 @@ def answer(m: dict, q: str, lang: str = "hi", history: list | None = None) -> di
         f"3. The transcript may contain speech-recognition errors. If it is too garbled "
         f"to determine the answer, reply {SENTINEL}.\n"
         f"4. Answer only what is asked, in 1-2 sentences, quoting exact numbers and names.\n"
-        f"5. Reply in English."
+        f"5. Write the answer in ENGLISH, whatever language the transcript is in. "
+        f"It is translated afterwards by a dedicated model; an answer written here "
+        f"in another language gets translated twice and comes out wrong."
         + (f"\nDomain terms: {gloss}" if gloss else ""))
 
     convo = ""
@@ -243,12 +388,17 @@ def answer(m: dict, q: str, lang: str = "hi", history: list | None = None) -> di
                 "sources": [{"start": h["start"], "text": h["text"]} for h in near],
                 "grounded": False}
 
-    ans = ans_en if lang == "en" else (_mt(ans_en, "en", lang) or ans_en)
+    ans, translated = _to_lang(ans_en, lang, src_hint=m.get("src_lang", "hi"))
     try:  # enforce BAIF terminology in the answer too
         from glossary import correct_target
         ans = correct_target(ans, lang)
     except Exception:
         pass
+    # Say so rather than passing English off as the requested language. The old
+    # behaviour returned the English silently, which is exactly what made this
+    # look like the model "sometimes answering in English".
+    if not translated and STR_UNTRANSLATED.get(lang):
+        ans = ans + "\n\n" + STR_UNTRANSLATED[lang]
 
     # Be upfront when the transcript itself was unreliable.
     conf = m.get("asr_confidence") or {}

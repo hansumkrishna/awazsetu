@@ -66,7 +66,10 @@ if len(sys.argv) > 1:
     import json
     from pipeline import process_video, video_id
     vp = sys.argv[1]
-    work_root = os.path.join(HERE, "data", "work")
+    import paths
+    # New work always goes somewhere writable; on a normal install that is the
+    # same folder it has always been.
+    work_root = paths.work_rw()
     work = os.path.join(work_root, video_id(vp))
     os.makedirs(work, exist_ok=True)
 

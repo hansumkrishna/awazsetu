@@ -46,17 +46,28 @@ Say the hardware line early: *i5, 16 GB, no GPU — the machine BAIF already has
 
 ## 2. Demo — core flow first (18 min)
 
-### a. The library (1 min)
+### a. Pick a language (30 sec)
+
+The first thing on screen is the language chooser: **English / हिंदी / मराठी / ओड़िआ**.
+Choose **मराठी**. The entire interface changes — buttons, labels, progress messages,
+error messages — and so does the language the assistant answers in.
+
+> Say: *"The person using this may not read English. Neither does the app, now. And on a
+> shared laptop it asks again for the next person rather than leaving them in mine."*
+
+Switch back to English if the room prefers, from the globe button in the header.
+
+### b. The library (1 min)
 Open the library. Fifteen items, video and audio, each showing its languages. Point out
 that every one is **already processed** — this is what the farmer-facing machine looks
 like on day one, not an empty app.
 
-### b. Switchable subtitles (3 min)
+### c. Switchable subtitles (3 min)
 Open **401.2 Housing of Goat** (Marathi source).
 Play 20 seconds. Switch the subtitle language मराठी → हिंदी → English → ଓଡ଼ିଆ **while it
 plays**. Emphasise: this is instant because it is a file read. No model is loading.
 
-### c. Voiceover (3 min)
+### d. Voiceover (3 min)
 Switch the audio track to the **Hindi** voiceover, then **Odia**. Let each play for 15
 seconds.
 
@@ -65,7 +76,7 @@ seconds.
 > transcribe the Marathi, translate it, and give Odia a voice. Odia is an output language
 > here, and we are explicit about that rather than pretending otherwise."
 
-### d. Ask the video a question (4 min)
+### e. Ask the video a question (4 min)
 Type a question in Marathi. Show the answer **with timestamped citations**, and click one
 to jump to that moment in the video.
 
@@ -75,14 +86,14 @@ user's language, and shows the closest lines it found.
 > "A confident wrong answer is worse than no answer. The model is required to answer only
 > from the transcript and to say so when the fact is not there."
 
-### e. Voice chat — the literacy unlock (4 min)
+### f. Voice chat — the literacy unlock (4 min)
 Tap the microphone. Ask out loud, in Marathi. Hear the answer spoken back.
 
 > "This is the journey that matters. A farmer who cannot read or type can still ask a
 > question and get an answer. Everything else we have shown is a convenience; this is
 > access."
 
-### f. Model Garden (3 min)
+### g. Model Garden (3 min)
 Open **/garden**.
 
 - It has **detected this machine** — memory, cores, tier — and recommends a preset.

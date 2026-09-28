@@ -106,16 +106,33 @@ def do_stt(audio_in: str, lang: str, out_json: str):
     # Mic clips are short -> a LIGHT model is enough and, crucially, fits in RAM
     # alongside a resident qwen (medium OOMs under memory pressure).
     threads = int(os.environ.get("AWAZ_CPU_THREADS", "0")) or max(4, (os.cpu_count() or 8) // 2)
+
+    from langs import ASR_LANGS
+    lang = lang if lang in ASR_LANGS else None
+
+    # The fallback chain depends on the language, because for Devanagari the small
+    # models are not a degraded option -- they are a wrong one. Measured: `base`
+    # transcribed Hindi speech into Urdu script and `tiny` returns Latin text for
+    # Devanagari speech. Either would hand the chat engine a question nobody asked,
+    # and it would answer that question confidently. For Hindi and Marathi the
+    # chain therefore only ever goes UP, and running out of options raises.
+    chosen = os.environ.get("AWAZ_MIC_WHISPER", "small")
+    if lang in ("hi", "mr"):
+        chain = [c for c in (chosen, "medium", "small")
+                 if c in ("small", "medium", "large-v3")] or ["medium"]
+    else:
+        chain = [chosen, "small", "base", "tiny"]
     model = None
-    for size in (os.environ.get("AWAZ_MIC_WHISPER", "small"), "base", "tiny"):
+    for size in dict.fromkeys(chain):
         try:
             model = WhisperModel(size, device="cpu", compute_type="int8", cpu_threads=threads)
             break
         except Exception:
             continue
     if model is None:
-        raise RuntimeError("no whisper model could be loaded for mic STT")
-    lang = lang if lang in ("hi", "mr", "en") else None
+        raise RuntimeError(
+            "no usable speech model could be loaded for the microphone "
+            "(tried: " + ", ".join(dict.fromkeys(chain)) + ")")
     # Same anti-garbage settings as the video path: no self-conditioning (stops
     # drift), domain priming, and a modest beam. Clips are short so the cost is small.
     prompt = None
@@ -138,6 +155,18 @@ def do_stt(audio_in: str, lang: str, out_json: str):
             text = ""
     except Exception:
         pass
+    # The known-mishear repairs the VIDEO transcript has always had, which the
+    # microphone path never got. Measured over 24 synthesised field questions:
+    # Marathi character error rate 0.332 -> 0.316, Hindi unchanged, and not one
+    # clip got worse. (A fuzzy near-miss matcher was tried at the same time and
+    # thrown away: it scored 0.338, below doing nothing, because it rewrote
+    # correct words that simply were not in the glossary.)
+    if lang and text:
+        try:
+            from glossary import correct_source
+            text = correct_source(text, lang)
+        except Exception:
+            pass
     json.dump({"text": text, "lang": info.language},
               open(out_json, "w", encoding="utf-8"), ensure_ascii=False)
 

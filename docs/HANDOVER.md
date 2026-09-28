@@ -12,6 +12,15 @@ You give it a video. It listens, writes down what was said, translates it into
 just ask it questions** — by typing or by speaking. Everything happens on the laptop;
 nothing is sent to the internet.
 
+### Choosing your language (the first thing you see)
+
+The home page opens with four buttons: **English / हिंदी / मराठी / ओड़िआ**. Pick one and
+the whole application uses it — every button, every message, and the language the
+assistant answers and speaks in. The globe button in the header changes it later.
+
+It asks again each time you return to the home page, because these laptops are shared.
+If yours is not, switch **Ask for the language on the home page** off in Settings.
+
 ### The five things you can do
 
 **1. Add a video**
@@ -19,7 +28,7 @@ Open <http://127.0.0.1:5000>, click **Upload**, pick the file. A progress bar sh
 transcribing → translating → done. The same video is never processed twice.
 
 **2. Watch with subtitles in your language**
-Click the video. Under the player, choose **हिंदी / मराठी / English**.
+Click the video. Under the player, choose **हिंदी / मराठी / English / ओड़िआ**.
 The subtitles change instantly — the video does not reload.
 
 **3. Hear it in another language (dub)**
@@ -36,6 +45,10 @@ If the video does not actually cover your question, it will say so rather than g
 Press the **🎙 microphone** button, speak your question, press it again to stop.
 It transcribes what you said, answers, and **speaks the answer aloud** in your
 language. This is designed for users who cannot read or type.
+
+Speaking works in Hindi, Marathi and English. It does not work in Odia, because no
+open speech model can recognise Odia — the app says so instead of guessing. Type the
+question and the answer still comes back in Odia, written and spoken.
 
 ### What to expect
 - **Answers come only from the video.** Ask about something else and it will say
@@ -75,7 +88,10 @@ language. This is designed for users who cannot read or type.
 | `app/voice_worker.py` | Mic STT + spoken answers |
 | `app/dub_worker.py` | MMS-TTS voiceover, timestamp-aligned, chunked |
 | `app/config.py` | Settings store, env bridge, system status, **per-language model guidance** |
+| `app/i18n.py` | **The interface language pack** — one catalogue, four languages, served to both Jinja and the browser |
+| `app/paths.py` | Decides where this install may write, by testing it. Keeps the app working when the install directory is read-only (MSIX) |
 | `app/glossary.json` | **The main tuning surface** — see below |
+| `installer/`, `scripts/build_msix.py` | The MSIX package: launcher, manifest, icons, signing |
 
 ### The one file you will actually edit: `app/glossary.json`
 Three sections, all plain text — no code, no retraining:
@@ -93,10 +109,17 @@ Three sections, all plain text — no code, no retraining:
 After editing, press **Re-process** on a video to apply it.
 
 ### Extending it
-- **A new language:** add it to `langs` in Settings, add an `asr_prompts` entry, and
-  confirm an MMS-TTS voice exists for it. Whisper and IndicTrans2 already cover many more.
-- **Better Indic translation:** `huggingface-cli login`, accept the IndicTrans2 terms,
-  then set the engine to `indictrans2` in Settings.
+- **A new CONTENT language** (subtitles, voiceover, answers): add a row to `LANGS` in
+  `app/langs.py` — name, native name, FLORES code, MMS-TTS repo, and whether Whisper can
+  transcribe it. Everything reads that one table, so the Settings chips, the Model Garden
+  columns and the target list all pick it up. Add an `asr_prompts` entry in
+  `glossary.json` and confirm the voice is on disk.
+- **A new INTERFACE language** (buttons and labels): add the code to `UI_LANGS` and a
+  native name to `UI_NAMES` in `app/i18n.py`, then fill in that language for each of the
+  ~140 keys. Anything you miss falls back to English rather than breaking, and
+  `python scripts	est_e2e.py i18n` lists exactly which keys are still missing.
+- **Changing wording anywhere in the app:** it is in `app/i18n.py` and nowhere else.
+  No string is written into a template or into JavaScript.
 - **Better Marathi answers:** swap the chat LLM for a stronger Indic model (e.g. Sarvam-1)
   in `models/llm/` as a GGUF; it appears in the Settings dropdown automatically.
 - **A new domain** (dairy, horticulture): replace the `asr_prompts` sentence and the
@@ -106,7 +129,7 @@ After editing, press **Re-process** on a video to apply it.
 ```bat
 python scripts\test_e2e.py
 ```
-Runs every journey in every language and writes `notes/TEST_EVIDENCE.md` with a
+Runs every journey in every language and writes `docs/TEST_EVIDENCE.md` with a
 pass/fail matrix. Run it after any model or glossary change.
 
 ---

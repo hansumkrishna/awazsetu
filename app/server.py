@@ -15,18 +15,82 @@ from flask import (Flask, send_from_directory, render_template, abort,
 mimetypes.add_type("text/vtt", ".vtt")
 
 APP_DIR = os.path.dirname(os.path.abspath(__file__))
-WORK = os.path.join(APP_DIR, "data", "work")
+import paths
+# Kept for the many `paths.work_dir(vid)` call sites that only ever read the
+# shipped library; anything that resolves an arbitrary id goes through
+# paths.work_dir() so an MSIX install can still process new uploads.
+WORK = paths.SHIPPED_WORK
 from langs import LANG_NAMES
+import i18n
 
 app = Flask(__name__,
             template_folder=os.path.join(APP_DIR, "templates"),
             static_folder=os.path.join(APP_DIR, "static"))
 
+UI_COOKIE = "awaz_ui_lang"
+
+
+def ui_lang() -> str:
+    """The interface language for THIS request.
+
+    Cookie first, and that ordering matters: a field laptop is shared, so the
+    person in front of it must be able to switch language without rewriting the
+    operator's saved default. Then the saved default, then whatever the browser
+    itself asks for, then English.
+    """
+    try:
+        c = request.cookies.get(UI_COOKIE)
+    except Exception:
+        c = None
+    if c:
+        return i18n.normalise(c)
+    try:
+        import config
+        saved = config.load().get("ui_lang")
+    except Exception:
+        saved = None
+    if saved:
+        return i18n.normalise(saved)
+    try:
+        return i18n.normalise(request.accept_languages.best_match(i18n.UI_LANGS))
+    except Exception:
+        return i18n.DEFAULT_UI
+
+
+@app.context_processor
+def _inject_i18n():
+    """Every template gets T, UI and the picker rows without being asked.
+
+    Done here rather than in each route because the failure mode of the manual
+    approach is silent: one forgotten render_template and that page alone renders
+    every label as an empty string.
+    """
+    L = ui_lang()
+    return {"UI": L, "T": i18n.pack(L), "UI_CHOICES": i18n.choices(),
+            "UI_NAMES": i18n.UI_NAMES}
+
+
+@app.route("/api/ui-lang", methods=["POST"])
+def api_ui_lang():
+    """Switch the interface language: cookie for this browser, settings.json as
+    the machine default so the next person sees the last choice pre-selected."""
+    data = request.get_json(silent=True) or {}
+    lang = i18n.normalise(data.get("lang"))
+    resp = jsonify({"lang": lang, "strings": i18n.pack(lang)})
+    resp.set_cookie(UI_COOKIE, lang, max_age=365 * 24 * 3600, samesite="Lax")
+    if data.get("remember", True):
+        try:
+            import config
+            config.save({"ui_lang": lang})
+        except Exception:
+            pass       # read-only install (MSIX): the cookie still carries the choice
+    return resp
+
 
 def _media_name(vid: str) -> str:
     """The source file as it was saved. Audio uploads keep their own extension —
     an .mp3 served as video.mp4 will not play in any browser."""
-    work = os.path.join(WORK, vid)
+    work = paths.work_dir(vid)
     mp = os.path.join(work, "manifest.json")
     if os.path.exists(mp):
         try:
@@ -52,7 +116,7 @@ def load_manifest(vid: str) -> dict:
     subtitle track, the exports and the chat id from `m.id`, so a divergence renders
     a player whose every URL points at a directory that does not exist.
     """
-    p = os.path.join(WORK, vid, "manifest.json")
+    p = os.path.join(paths.work_dir(vid), "manifest.json")
     if not os.path.exists(p):
         abort(404)
     with open(p, encoding="utf-8") as f:
@@ -66,15 +130,14 @@ def load_manifest(vid: str) -> dict:
 @app.route("/")
 def index():
     vids = []
-    if os.path.isdir(WORK):
-        for d in sorted(os.listdir(WORK)):
-            mp = os.path.join(WORK, d, "manifest.json")
-            if os.path.exists(mp):
-                m = json.load(open(mp, encoding="utf-8"))
-                vids.append({"id": d, "video": m.get("video"),
-                             "kind": m.get("kind", "video"),
-                             "langs": m.get("langs", [])})
-    return render_template("index.html", videos=vids, lang_names=LANG_NAMES)
+    for d, folder in paths.list_work():
+        m = json.load(open(os.path.join(folder, "manifest.json"), encoding="utf-8"))
+        vids.append({"id": d, "video": m.get("video"),
+                     "kind": m.get("kind", "video"),
+                     "langs": m.get("langs", [])})
+    import config
+    return render_template("index.html", videos=vids, lang_names=LANG_NAMES,
+                           lang_prompt=bool(config.load().get("lang_prompt", True)))
 
 
 @app.route("/watch/<vid>")
@@ -83,7 +146,9 @@ def watch(vid: str):
     tracks = [{"lang": L, "name": LANG_NAMES.get(L, L), "file": m["vtts"][L]}
               for L in m["langs"] if L in m.get("vtts", {})]
     import config
+    from langs import ASR_LANGS
     return render_template("player.html", m=m, tracks=tracks,
+                           asr_langs=ASR_LANGS,
                            auto_speak=config.load().get("auto_speak", True))
 
 
@@ -91,7 +156,7 @@ def watch(vid: str):
 def media(vid: str, fn: str):
     if fn in ("video", "media"):
         fn = _media_name(vid)
-    return send_from_directory(os.path.join(WORK, vid), fn, conditional=True)
+    return send_from_directory(paths.work_dir(vid), fn, conditional=True)
 
 
 @app.route("/chat/<vid>", methods=["POST"])
@@ -121,7 +186,7 @@ def dub(vid: str, lang: str):
     """Generate (once) an MMS-TTS voiceover for a language, then serve it. Cached."""
     import subprocess
     import sys
-    work = os.path.join(WORK, vid)
+    work = paths.work_dir(vid)
     out = os.path.join(work, f"dub.{lang}.wav")
     if not os.path.exists(out) or os.path.getsize(out) < 10000:
         # Voiceovers are pre-built during processing so playback is instant. A missing
@@ -151,18 +216,19 @@ def upload():
     f = request.files.get("file")
     if not f or not f.filename:
         return jsonify({"error": "no file"}), 400
-    updir = os.path.join(APP_DIR, "data", "uploads")
-    os.makedirs(updir, exist_ok=True)
+    updir = paths.uploads_dir()
     safe = secure_filename(f.filename) or "video.mp4"
     if not os.path.splitext(safe)[1]:
         safe += ".mp4"
     path = os.path.join(updir, safe)
     f.save(path)
     vid = _content_id(path)
-    work = os.path.join(WORK, vid)
+    # Dedup BEFORE creating anything, or re-uploading a shipped video leaves an
+    # empty folder in the writable root that then shadows the real one.
+    if os.path.exists(os.path.join(paths.work_dir(vid), "manifest.json")):
+        return jsonify({"id": vid, "cached": True})
+    work = os.path.join(paths.work_rw(), vid)
     os.makedirs(work, exist_ok=True)
-    if os.path.exists(os.path.join(work, "manifest.json")):
-        return jsonify({"id": vid, "cached": True})   # dedup: already processed
     try:  # keep the original extension so audio stays audio
         ext = os.path.splitext(path)[1].lower() or ".mp4"
         from pipeline import AUDIO_EXT
@@ -189,12 +255,19 @@ def voice_chat(vid: str):
     f = request.files.get("audio")
     if not f:
         return jsonify({"error": "no audio"}), 400
-    lang = request.form.get("lang", "hi")
+    lang = i18n.normalise(request.form.get("lang", "hi"))
+    # Odia has no speech-recognition model, so a microphone clip in Odia can only
+    # produce nonsense. Say that, in Odia, instead of transcribing it to garbage
+    # and answering the garbage -- which is what used to happen.
+    from langs import can_transcribe
+    if not can_transcribe(lang):
+        return jsonify({"question": "", "answer": i18n.t("voice_no_asr", lang),
+                        "sources": [], "audio": None, "grounded": False})
     try:
         history = json.loads(request.form.get("history") or "[]")
     except Exception:
         history = []
-    work = os.path.join(WORK, vid)
+    work = paths.work_dir(vid)
     os.makedirs(work, exist_ok=True)
     clip = os.path.join(work, "voice_in.webm")
     f.save(clip)
@@ -225,11 +298,7 @@ def voice_chat(vid: str):
     except Exception as e:
         return jsonify({"error": f"stt failed: {e}"}), 500
     if not q:
-        NOHEAR = {"en": "I could not hear that clearly. Please try again.",
-                  "hi": "आवाज़ स्पष्ट नहीं सुनाई दी। कृपया दोबारा बोलें।",
-                  "mr": "आवाज स्पष्ट ऐकू आला नाही. कृपया पुन्हा बोला.",
-                  "or": "ସ୍ୱର ସ୍ପଷ୍ଟ ଶୁଣାଗଲା ନାହିଁ। ଦୟାକରି ପୁଣି କୁହନ୍ତୁ।"}
-        return jsonify({"question": "", "answer": NOHEAR.get(lang, NOHEAR["en"]),
+        return jsonify({"question": "", "answer": i18n.t("voice_nohear", lang),
                         "sources": [], "audio": None, "grounded": False})
 
     # 2) grounded answer (reuses the text chat pipeline: Q->En, RAG, LLM, ->lang)
@@ -237,13 +306,19 @@ def voice_chat(vid: str):
     res = answer(m, q, lang, history)
     ans = res.get("answer", "")
 
-    # 3) text -> speech. If the answer couldn't be translated (stayed English),
-    # speak it with the English voice rather than mispronouncing it in an Indic voice.
+    # 3) text -> speech, using a voice that matches the script actually produced.
+    # An Indic voice handed Latin text mispronounces every word of it, so when the
+    # answer could not be translated the English voice reads it instead. Decided
+    # from the Unicode block rather than an ASCII ratio, which mis-fired on Odia
+    # and on Hindi answers containing technical terms.
     tts_lang = lang
-    if lang in ("hi", "mr") and ans:
-        non_ascii = sum(1 for c in ans if ord(c) > 127)
-        if non_ascii < len(ans) * 0.15:
-            tts_lang = "en"
+    try:
+        from chat import in_target_script, script_of
+        if ans and not in_target_script(ans, lang):
+            tts_lang = {"latin": "en", "deva": "hi", "orya": "or"}.get(
+                script_of(ans), "en")
+    except Exception:
+        pass
     audio_url = None
     try:
         tf = os.path.join(work, "voice_ans.txt")
@@ -262,7 +337,7 @@ def voice_chat(vid: str):
 
 @app.route("/status/<vid>")
 def status(vid: str):
-    p = os.path.join(WORK, vid, "status.json")
+    p = os.path.join(paths.work_dir(vid), "status.json")
     if not os.path.exists(p):
         return jsonify({"stage": "starting", "pct": 0})
     with open(p, encoding="utf-8") as f:
@@ -295,7 +370,7 @@ def export_transcript(vid: str):
 def export_mkv(vid: str):
     import subprocess
     import config as _c
-    work = os.path.join(WORK, vid)
+    work = paths.work_dir(vid)
     m = load_manifest(vid)
     out = os.path.join(work, "bundle.mkv")
     if not os.path.exists(out):
@@ -325,8 +400,14 @@ def export_mkv(vid: str):
 @app.route("/settings")
 def settings_page():
     import config
+    from langs import LANGS
+    # The target-language chips used to be hardcoded to hi/mr/en in the template,
+    # so opening Settings and pressing Save silently dropped Odia from the saved
+    # list. They are built from the language table now.
+    content = [{"code": k, "native": v["native"], "name": v["name"],
+                "asr": v["asr"]} for k, v in LANGS.items()]
     return render_template("settings.html", s=config.load(), st=config.status(),
-                           defaults=config.DEFAULTS)
+                           defaults=config.DEFAULTS, content_langs=content)
 
 
 @app.route("/api/settings", methods=["GET", "POST"])
@@ -379,7 +460,7 @@ def reprocess(vid: str):
     transcript/subs/dubs so the new ASR/MT models actually apply; keeps video.mp4."""
     import subprocess
     import sys
-    work = os.path.join(WORK, vid)
+    work = paths.work_dir(vid)
     src = os.path.join(work, _media_name(vid))
     if not os.path.exists(src):
         return jsonify({"error": "source video not found"}), 404
@@ -403,12 +484,10 @@ def reprocess(vid: str):
 def search():
     q = (request.args.get("q") or "").strip().lower()
     hits = []
-    if q and os.path.isdir(WORK):
-        for d in sorted(os.listdir(WORK)):
-            mp = os.path.join(WORK, d, "manifest.json")
-            if not os.path.exists(mp):
-                continue
-            m = json.load(open(mp, encoding="utf-8"))
+    if q:
+        for d, folder in paths.list_work():
+            m = json.load(open(os.path.join(folder, "manifest.json"),
+                               encoding="utf-8"))
             for s in m["segments"]:
                 blob = (" ".join(str(v) for v in (s.get("t") or {}).values())
                         + " " + s["text"]).lower()

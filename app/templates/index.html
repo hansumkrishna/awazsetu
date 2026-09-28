@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{ UI }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -8,9 +8,16 @@
   :root { --red:#c0272d; --ink:#1a1a1a; --mut:#6b6b6b; --line:#e7e7e7; --bg:#f6f6f4; }
   * { box-sizing:border-box; }
   body { margin:0; font-family:"Segoe UI",system-ui,sans-serif; background:var(--bg); color:var(--ink); }
-  header { display:flex; align-items:center; gap:12px; padding:14px 22px; background:#fff; border-bottom:1px solid var(--line); }
+  header { display:flex; align-items:center; gap:12px; padding:14px 22px; background:#fff; border-bottom:1px solid var(--line); flex-wrap:wrap; }
   .logo { width:18px; height:18px; background:var(--red); border-radius:3px; }
   b { font-size:19px; } .tag { color:var(--mut); font-size:13px; }
+  header a { color:#b01c24; text-decoration:none; font-size:14px; }
+  .navr { margin-left:auto; display:flex; gap:16px; align-items:center; }
+  /* The language button is a first-class control, not a link: on a shared laptop
+     it is the single most likely thing the next person needs to touch. */
+  .langbtn { border:1px solid var(--line); background:#fff; border-radius:999px;
+             padding:5px 13px; font-size:14px; cursor:pointer; color:var(--ink); }
+  .langbtn:hover { border-color:var(--red); }
   .wrap { max-width:860px; margin:24px auto; padding:0 18px; }
   h3 { margin:22px 0 10px; font-size:15px; text-transform:uppercase; letter-spacing:.5px; color:var(--mut); }
   #drop { border:2px dashed #d7c3c4; border-radius:14px; padding:34px; text-align:center; background:#fff; cursor:pointer; transition:.15s; }
@@ -33,30 +40,54 @@
   .langs span { font-size:12px; border:1px solid var(--line); border-radius:999px; padding:2px 9px; margin-right:6px; color:#444; }
   .snip { color:var(--mut); font-size:13px; margin-top:6px; }
   .empty { color:var(--mut); }
+
+  /* ---- language picker ---- */
+  #langmodal { position:fixed; inset:0; background:rgba(26,26,26,.55); z-index:50;
+               display:none; align-items:center; justify-content:center; padding:20px; }
+  #langmodal.show { display:flex; }
+  .lm { background:#fff; border-radius:16px; padding:28px 26px 22px; max-width:460px; width:100%;
+        box-shadow:0 18px 50px rgba(0,0,0,.25); }
+  .lm h2 { margin:0 0 6px; font-size:21px; }
+  .lm p  { margin:0 0 18px; color:var(--mut); font-size:13.5px; line-height:1.5; }
+  .lmgrid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  @media (max-width:420px){ .lmgrid { grid-template-columns:1fr; } }
+  .lmopt { border:1.5px solid var(--line); background:#fff; border-radius:11px; padding:14px 10px;
+           cursor:pointer; text-align:center; transition:.12s; font-family:inherit; }
+  .lmopt:hover { border-color:var(--red); background:#fffafa; }
+  .lmopt.on { border-color:var(--red); background:#fff1f1; }
+  .lmopt .nat { font-size:19px; color:var(--ink); line-height:1.35; }
+  .lmopt .eng { font-size:11.5px; color:var(--mut); margin-top:3px; letter-spacing:.3px; }
+  .lmfoot { display:flex; align-items:center; gap:12px; margin-top:18px; }
+  .lmfoot button { background:var(--red); color:#fff; border:0; border-radius:9px;
+                   padding:10px 22px; font-size:15px; cursor:pointer; font-family:inherit; }
+  .lmfoot small { color:var(--mut); font-size:12px; line-height:1.4; }
 </style>
 </head>
 <body>
-<header><div class="logo"></div><b>AwazSetu</b><span class="tag">· offline video translate · dub · chat</span>
-  <span style="margin-left:auto;display:flex;gap:16px"><a href="/garden" style="color:#b01c24;text-decoration:none;font-size:14px">🌱 Model Garden</a><a href="/settings" style="color:#b01c24;text-decoration:none;font-size:14px">⚙ Settings</a></span></header>
+<header><div class="logo"></div><b>AwazSetu</b><span class="tag">· {{ T.app_tagline }}</span>
+  <span class="navr">
+    <button class="langbtn" onclick="openLang()" title="{{ T.lang_title }}">🌐 {{ UI_NAMES[UI] }}</button>
+    <a href="/garden">🌱 {{ T.nav_garden }}</a><a href="/settings">⚙ {{ T.nav_settings }}</a>
+  </span></header>
 <div class="wrap">
 
-  <h3>Add a video</h3>
+  <h3>{{ T.home_add }}</h3>
   <div id="drop">
-    <div class="big">📤 Drop a video or audio file here, or click to choose</div>
-    <div class="sub">Hindi / Marathi / English · processed fully offline on this machine</div>
+    <div class="big">📤 {{ T.home_drop }}</div>
+    <div class="sub">{{ T.home_drop_sub }}</div>
     <input id="file" type="file" accept="video/*,audio/*,.mp3,.wav,.m4a,.aac,.ogg,.opus,.flac" style="display:none">
   </div>
   <div class="bar" id="bar"><div id="barfill"></div></div>
   <div id="pstage"></div>
   <div id="psteps"></div>
 
-  <h3>Search across your library</h3>
+  <h3>{{ T.home_search }}</h3>
   <div class="srch">
-    <input id="q" placeholder="Find a moment across all processed videos…" oninput="debounced()">
+    <input id="q" placeholder="{{ T.home_search_ph }}" oninput="debounced()">
   </div>
   <div id="results"></div>
 
-  <h3>Processed videos</h3>
+  <h3>{{ T.home_processed }}</h3>
   <div id="list">
   {% for v in videos %}
     <a class="card" href="/watch/{{ v.id }}">
@@ -64,12 +95,68 @@
       <div class="langs" style="margin-top:8px">{% for L in v.langs %}<span>{{ lang_names.get(L, L) }}</span>{% endfor %}</div>
     </a>
   {% else %}
-    <p class="empty">No processed videos yet — add one above.</p>
+    <p class="empty">{{ T.home_empty }}</p>
   {% endfor %}
   </div>
 </div>
 
+<!-- Language picker. Rendered on every page so the header button can raise it
+     even when the automatic prompt is switched off in Settings. -->
+<div id="langmodal" role="dialog" aria-modal="true" aria-labelledby="lmtitle">
+  <div class="lm">
+    <h2 id="lmtitle">{{ T.lang_title }}</h2>
+    <p>{{ T.lang_sub }}</p>
+    <div class="lmgrid">
+      {% for c in UI_CHOICES %}
+      <button type="button" class="lmopt {% if c.code == UI %}on{% endif %}"
+              data-lang="{{ c.code }}" onclick="pickLang('{{ c.code }}')">
+        <div class="nat">{{ c.native }}</div><div class="eng">{{ c.english }}</div>
+      </button>
+      {% endfor %}
+    </div>
+    <div class="lmfoot">
+      <button type="button" onclick="closeLang()">{{ T.lang_continue }}</button>
+      <small>{{ T.lang_hint }}</small>
+    </div>
+  </div>
+</div>
+
 <script>
+const T = {{ T|tojson }};
+const UI = {{ UI|tojson }};
+const LANG_PROMPT = {{ 'true' if lang_prompt else 'false' }};
+
+// ---- language picker -------------------------------------------------------
+const modal = document.getElementById('langmodal');
+function openLang(){ modal.classList.add('show'); }
+function closeLang(){ modal.classList.remove('show'); }
+async function pickLang(code){
+  document.querySelectorAll('.lmopt').forEach(b => b.classList.toggle('on', b.dataset.lang===code));
+  if (code === UI){ closeLang(); return; }          // nothing to reload for
+  try{
+    await fetch('/api/ui-lang', {method:'POST', headers:{'Content-Type':'application/json'},
+                                 body: JSON.stringify({lang: code, remember: true})});
+  }catch(e){ console.error('language switch failed:', e); }
+  // Reload rather than swap strings in place: half this page is rendered by the
+  // server (the video cards, the language chips), so a client-side swap would
+  // leave those in the previous language.
+  sessionStorage.setItem('awaz_lang_just_set', '1');
+  location.reload();
+}
+modal.addEventListener('click', e => { if (e.target === modal) closeLang(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLang(); });
+
+// Show it on arrival — a shared laptop should ask each new person. The one-shot
+// flag stops it re-appearing on the reload that a choice itself triggers.
+(function(){
+  if (!LANG_PROMPT) return;
+  if (sessionStorage.getItem('awaz_lang_just_set')){
+    sessionStorage.removeItem('awaz_lang_just_set'); return;
+  }
+  openLang();
+})();
+
+// ---- upload ----------------------------------------------------------------
 const drop = document.getElementById('drop'), file = document.getElementById('file');
 const bar = document.getElementById('bar'), fill = document.getElementById('barfill'), pstage = document.getElementById('pstage');
 const psteps = document.getElementById('psteps');
@@ -82,10 +169,10 @@ file.onchange = () => { if (file.files[0]) upload(file.files[0]); };
 async function upload(f){
   const fd = new FormData(); fd.append('file', f);
   bar.style.display = 'block'; pstage.style.display = 'block'; psteps.style.display = 'block';
-  pstage.textContent = 'Uploading…'; fill.style.width = '4%';
+  pstage.textContent = T.home_uploading; fill.style.width = '4%';
   const r = await fetch('/upload', { method:'POST', body: fd });
   const j = await r.json();
-  if (j.error){ pstage.textContent = 'Error: ' + j.error; return; }
+  if (j.error){ pstage.textContent = T.home_error + ': ' + j.error; return; }
   if (j.cached){ location.href = '/watch/' + j.id; return; }
   poll(j.id);
 }
@@ -93,7 +180,7 @@ function poll(id){
   const iv = setInterval(async () => {
     const s = await (await fetch('/status/' + id)).json();
     fill.style.width = (s.pct || 0) + '%';
-    pstage.textContent = s.stage === 'done' ? 'Done — opening…' : (s.stage || 'processing') + '…';
+    pstage.textContent = s.stage === 'done' ? T.home_done : (s.stage || T.home_processing) + '…';
     // Per-step list: subtitles AND voiceovers are all built now, so nothing has to be
     // synthesised later while someone is watching.
     if (s.steps && s.steps.length){
@@ -107,6 +194,7 @@ function poll(id){
   }, 1500);
 }
 
+// ---- search ----------------------------------------------------------------
 let t;
 function debounced(){ clearTimeout(t); t = setTimeout(search, 300); }
 async function search(){
@@ -117,7 +205,7 @@ async function search(){
   box.innerHTML = (j.hits || []).map(h =>
     `<a class="card" href="/watch/${h.id}?t=${h.start}"><div>${h.video||h.id}</div>
      <div class="snip">▶ ${Math.floor(h.start/60)}:${String(Math.floor(h.start%60)).padStart(2,'0')} — ${h.text}</div></a>`
-  ).join('') || '<p class="empty">No matches.</p>';
+  ).join('') || `<p class="empty">${T.home_nomatch}</p>`;
 }
 </script>
 </body>

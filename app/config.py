@@ -10,7 +10,11 @@ import os
 import json
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-PATH = os.path.join(HERE, "settings.json")
+try:
+    import paths as _paths
+    PATH = _paths.settings_path()
+except Exception:           # standalone import (tests, workers) -> beside the app
+    PATH = os.path.join(HERE, "settings.json")
 
 DEFAULTS = {
     "asr_model": "medium",              # video transcription (benchmarked best quality/speed for Indic)
@@ -26,6 +30,8 @@ DEFAULTS = {
     "retrieval_mode": "foreground",     # foreground (key lines + full) | retrieval
     "temperature": 0.2,                 # chat LLM temperature
     "auto_speak": True,                 # voice: auto-play spoken answer
+    "ui_lang": "en",                    # interface language (see i18n.UI_LANGS)
+    "lang_prompt": True,                # ask for the language on every home page load
 }
 
 # settings key -> env var the modules read
@@ -230,23 +236,41 @@ def mms_voices() -> list[str]:
     return out
 
 
-def status() -> dict:
-    import urllib.request
+def chat_models() -> list[str]:
+    """Chat models this machine can actually load, whichever backend is in use.
+
+    This used to ask Ollama directly, which returned nothing once llm.py started
+    loading GGUF files in-process. The Settings dropdown then had nothing to
+    offer and silently collapsed to whatever was already saved, so the 1.5B
+    fallback could not be selected even though it was installed.
+    """
     try:
-        urllib.request.urlopen("http://127.0.0.1:11434/api/tags", timeout=3)
-        ollama_up = True
+        import llm as _llm
+        return _llm.available_models()
     except Exception:
-        ollama_up = False
+        return ollama_models()
+
+
+def status() -> dict:
+    backend, up = "none", False
+    try:
+        import llm as _llm
+        st = _llm.status()
+        backend, up = st.get("backend", "none"), bool(st.get("ollama_up"))
+    except Exception:
+        pass
     return {
         "free_ram_mb": free_ram_mb(),
-        "ollama_up": ollama_up,
-        "ollama_models": ollama_models(),
+        "llm_backend": backend,
+        "ollama_up": up,
+        "chat_models": chat_models(),
         "whisper_installed": whisper_installed(),
         "translate_engines": translate_engines(),
         "mms_voices": mms_voices(),
         "offline": True,
         "guide": model_guide(),
         "it2_directions": indictrans2_directions(),
+        "paths": _paths.describe() if "_paths" in globals() else {},
     }
 
 
@@ -256,15 +280,15 @@ def status() -> dict:
 MODEL_GUIDE = {
     "asr": {
         "tiny":     {"en": 2, "hi": 1, "mr": 1, "speed": 5, "ram_mb": 150,
-                     "note": "Fastest. Latin-script only in practice — do not use for Indic."},
+                     "note": "Fastest. Latin-script only in practice — do not use for Indic, and never for the microphone in Hindi or Marathi."},
         "base":     {"en": 3, "hi": 2, "mr": 1, "speed": 5, "ram_mb": 250,
                      "note": "Measured: transcribed Hindi speech in Urdu script. Avoid for Indic."},
         "small":    {"en": 4, "hi": 3, "mr": 2, "speed": 4, "ram_mb": 600,
-                     "note": "Measured: Marathi output was garbled and unusable. OK for English and live mic."},
+                     "note": "Measured: Marathi output was garbled and unusable on video. Still the best MICROPHONE choice — on short spoken questions it scored CER 0.33 Marathi / 0.18 Hindi at 3.5s per clip, and the larger models buy little for a lot of waiting."},
         "medium":   {"en": 5, "hi": 4, "mr": 4, "speed": 3, "ram_mb": 1600,
-                     "note": "RECOMMENDED. Measured RTF 0.32 on GPU; produced meaningful Marathi."},
+                     "note": "RECOMMENDED for video. Measured RTF 0.32 on GPU; produced meaningful Marathi. For the microphone it improves Hindi (CER 0.18 to 0.14) but not Marathi (0.35 to 0.35), at 2.6x the wait."},
         "large-v3": {"en": 5, "hi": 5, "mr": 5, "speed": 1, "ram_mb": 3200,
-                     "note": "Best accuracy. Measured on a 4 GB GPU at int8_float16: RTF 0.49. Needs one process per item — a shared CUDA context exhausts 4 GB."},
+                     "note": "Best accuracy: microphone CER 0.09 Hindi / 0.29 Marathi, the best of any size. Measured on a 4 GB GPU at int8_float16: RTF 0.49. Needs one process per item — a shared CUDA context exhausts 4 GB. At ~16s per spoken question it is too slow for live voice chat."},
     },
     "mt": {
         "nllb":        {"en": 4, "hi": 4, "mr": 3, "speed": 4, "ram_mb": 700,
@@ -291,7 +315,7 @@ def model_guide(installed_only: bool = True) -> dict:
         return MODEL_GUIDE
     asr = set(whisper_installed())
     mt = {k for k, v in translate_engines().items() if v}
-    llm = set(ollama_models())
+    llm = set(chat_models())
     out = {"asr": {k: v for k, v in MODEL_GUIDE["asr"].items() if k in asr},
            "mt": {k: v for k, v in MODEL_GUIDE["mt"].items() if k in mt},
            "llm": {k: v for k, v in MODEL_GUIDE["llm"].items()
