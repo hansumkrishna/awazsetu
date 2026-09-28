@@ -62,9 +62,22 @@ TO APPLY
 --------
   1. Close AwazSetu if it is running.
   2. Extract this zip INTO your AwazSetu folder, replacing files when asked.
-     app\\ scripts\\ docs\\ must land beside runtime\\ and models\\.
-  3. Double-click AwazSetu-Check.bat  ->  READY
-  4. Double-click AwazSetu.bat
+     app\\ scripts\\ docs\\ runtime\\ must land beside models\\.
+  3. Double-click APPLY_UPDATE.bat and let it finish.
+  4. It offers to start AwazSetu at the end.
+
+Step 3 is not optional, and extracting alone is not enough. Extracting can add
+and replace files but it can never delete one, and three things have to go:
+compiled Python caches that can shadow the files you just replaced, documents
+this release withdrew, and stale exports. It also corrects terminology in
+subtitles generated before the glossary knew about it, and rebuilds only the
+voiceovers whose words actually changed. No model is re-run.
+
+By hand instead, if you prefer: delete every __pycache__ folder, delete
+docs\\DELIVERY_PLAN.md, docs\\SUBMISSION.md and docs\\TASKS.md, then run
+  runtime\\python\\python.exe scripts\\apply_glossary.py
+  runtime\\python\\python.exe scripts\\redub_changed.py
+  AwazSetu-Check.bat
 
 Your processed videos and uploads are untouched: they live in app\\data\\, and
 this pack does not contain that folder.
@@ -158,6 +171,12 @@ def main() -> None:
     os.makedirs(DIST, exist_ok=True)
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:
         z.writestr("APPLY_THIS_UPDATE.txt", READ_ME)
+        # The one-click applier goes at the ROOT of the zip so it lands next
+        # to AwazSetu.bat when the archive is extracted into an installation.
+        # It is also shipped in scripts/ as an ordinary tracked file.
+        bat = os.path.join(REPO, "scripts", "APPLY_UPDATE.bat")
+        if os.path.exists(bat):
+            z.write(bat, "APPLY_UPDATE.bat")
         for src, arc in sorted(files, key=lambda x: x[1]):
             z.write(src, arc)
         for rel in sorted(OPERATOR_OWNED):
