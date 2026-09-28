@@ -218,12 +218,39 @@ def indictrans2_directions() -> dict:
     }
 
 
+_it2_runnable: bool | None = None
+
+
+def indictrans2_runnable() -> bool:
+    """Can this interpreter actually RUN IndicTrans2, not merely find its weights?
+
+    It needs IndicTransToolkit, whose processor pulls in indicnlp, sacremoses
+    and pandas. Weights on disk say nothing about that, and the difference is
+    not academic: the embedded runtime shipped without the toolkit, so every
+    packaged copy silently fell back to NLLB while this page, the Model Garden
+    and the doctor all reported IndicTrans2 as installed and in use. Nothing
+    surfaced it, because the fallback works -- just worse, in exactly the
+    domain-vocabulary way IndicTrans2 was chosen to avoid.
+
+    Cached per process: the import costs about a second and the answer cannot
+    change while the interpreter is alive.
+    """
+    global _it2_runnable
+    if _it2_runnable is None:
+        try:
+            import IndicTransToolkit.processor  # noqa: F401
+            _it2_runnable = True
+        except Exception:
+            _it2_runnable = False
+    return _it2_runnable
+
+
 def translate_engines() -> dict:
-    """Availability is decided by WEIGHTS ON DISK, not by whether a token file exists —
-    once downloaded the models work offline with no login."""
+    """Availability is weights on disk AND an interpreter that can load them."""
     nllb = os.path.exists(os.path.join(nllb_dir(), "model.bin"))
     d = indictrans2_directions()
-    return {"nllb": nllb, "indictrans2": bool(d["indic-en"])}
+    return {"nllb": nllb,
+            "indictrans2": bool(d["indic-en"]) and indictrans2_runnable()}
 
 
 def mms_voices() -> list[str]:

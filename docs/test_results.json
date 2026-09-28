@@ -1,58 +1,66 @@
 [
  {
-  "suite": "langid",
-  "case": "hand-pairs",
-  "lang": "-",
+  "suite": "chat",
+  "case": "on-topic",
+  "lang": "hi",
   "ok": true,
-  "detail": "6/6 identified",
-  "secs": null
+  "detail": "यह वीडियो बकरियों में रोगों के निदान, उपचार और रोकथाम के बारे में है, जिसमें हेमरोराजिक सेप्टिकैमीया और एंटरोटॉक्सैमीया जैसी विशिष्ट बीमारियां शामिल ह",
+  "secs": 45.9
  },
  {
-  "suite": "langid",
-  "case": "corpus-accuracy",
-  "lang": "-",
+  "suite": "chat",
+  "case": "on-topic",
+  "lang": "mr",
   "ok": true,
-  "detail": "842/920 correct, 69 unsure, 9 wrong (91.5%)",
-  "secs": null
+  "detail": "या व्हिडिओमध्ये शेळींना लागणाऱ्या विविध रोगांचे वर्णन केले आहे, ज्यात त्यांची लक्षणे, कारणे आणि उपचार यांचा समावेश आहे, तसेच लसीकरण आणि कणमुक्ती यासार",
+  "secs": 11.7
  },
  {
-  "suite": "langid",
-  "case": "keeps-correct-answers",
-  "lang": "-",
-  "ok": true,
-  "detail": "911/920 correct answers accepted (99.0%) -- a false rejection costs the user their answer",
-  "secs": null
+  "suite": "chat",
+  "case": "on-topic",
+  "lang": "en",
+  "ok": false,
+  "detail": "answer not on-topic This video is about the diseases affecting sheep, including hemorrhagic septicemia, enterotoxemia, and foot-and-mouth disease, and their treatment met",
+  "secs": 2.5
  },
  {
-  "suite": "langid",
-  "case": "catches-wrong-language",
-  "lang": "-",
+  "suite": "chat",
+  "case": "on-topic",
+  "lang": "or",
   "ok": true,
-  "detail": "842/920 wrong-language answers caught (91.5%) -- this is the reported bug",
-  "secs": null
+  "detail": "ଏହି ଭିଡିଓରେ ଛେଳିମାନଙ୍କୁ ପ୍ରଭାବିତ କରୁଥିବା ବିଭିନ୍ନ ରୋଗ, ସେମାନଙ୍କ ଲକ୍ଷଣ, କାରଣ ଏବଂ ଚିକିତ୍ସା ସମେତ ରୋଗ ପ୍ରତିରୋଧକ ପଦକ୍ଷେପ ଯେପରି ଟିକାକରଣ ଏବଂ ପାରାଜିତ ରୋଗ ନିୟନ୍",
+  "secs": 11.8
  },
  {
-  "suite": "langid",
-  "case": "guard",
-  "lang": "-",
+  "suite": "refusal",
+  "case": "offtopic-refused",
+  "lang": "hi",
   "ok": true,
-  "detail": "5/5 correct -- Marathi must NOT pass as Hindi",
-  "secs": null
+  "detail": "इस वीडियो में इसकी जानकारी नहीं है। सबसे नज़दीकी पंक्तियाँ नीचे दी गई हैं।",
+  "secs": 25.7
  },
  {
-  "suite": "script",
-  "case": "detect",
-  "lang": "-",
+  "suite": "refusal",
+  "case": "offtopic-refused",
+  "lang": "mr",
   "ok": true,
-  "detail": "7 cases",
-  "secs": null
+  "detail": "या व्हिडिओमध्ये याची माहिती नाही. सर्वात जवळच्या ओळी खाली दिल्या आहेत.",
+  "secs": 4.6
  },
  {
-  "suite": "script",
-  "case": "guard",
-  "lang": "-",
+  "suite": "refusal",
+  "case": "offtopic-refused",
+  "lang": "en",
   "ok": true,
-  "detail": "6/6 correct",
-  "secs": null
+  "detail": "This video does not cover that. The closest lines I found are below.",
+  "secs": 0.6
+ },
+ {
+  "suite": "refusal",
+  "case": "offtopic-refused",
+  "lang": "or",
+  "ok": true,
+  "detail": "ଏହି ଭିଡିଓରେ ସେ ବିଷୟରେ କିଛି ନାହିଁ। ନିକଟତମ ଧାଡ଼ିଗୁଡ଼ିକ ତଳେ ଦିଆଯାଇଛି।",
+  "secs": 4.7
  }
 ]

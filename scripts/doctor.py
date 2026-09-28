@@ -177,6 +177,57 @@ def c_storage():
     return "PASS", f"portable install — everything beside the app in {root}"
 
 
+
+def c_mt_runs():
+    """Translate one sentence for real, with the configured engine.
+
+    Reporting an engine as installed because its weights are on disk is how the
+    packaged runtime shipped for weeks silently using the fallback: the models
+    were all present, the toolkit that loads them was not, and NLLB quietly
+    covered for it. The only check that would have caught that is this one --
+    run the thing and look at what comes back.
+    """
+    import subprocess
+    import sys as _sys
+    import tempfile
+    import json as _json
+    import config as _c
+    eng = _c.load().get("translate_engine", "indictrans2")
+    if eng in ("indictrans2", "it2", "indic"):
+        worker = "indictrans_worker.py"
+        job = {"src": "en", "targets": ["hi", "mr"],
+               "sentences": ["The shed should be dry."], "threads": 4}
+    else:
+        md = _c.nllb_dir()
+        worker = "translate_worker.py"
+        job = {"model_dir": md, "src": "en", "targets": ["hi", "mr"],
+               "sentences": ["The shed should be dry."], "threads": 4}
+    d = tempfile.mkdtemp()
+    jf, of = os.path.join(d, "j.json"), os.path.join(d, "o.json")
+    with open(jf, "w", encoding="utf-8") as f:
+        _json.dump(job, f, ensure_ascii=False)
+    try:
+        r = subprocess.run([_sys.executable, os.path.join(APP, worker), jf, of],
+                           capture_output=True, text=True, timeout=600)
+    except Exception as e:
+        return "FAIL", f"{eng}: worker did not run ({type(e).__name__})"
+    if r.returncode != 0:
+        tail = (r.stderr or "").strip().splitlines()
+        why = tail[-1][:120] if tail else "no output"
+        return "FAIL", f"{eng} failed: {why}"
+    try:
+        with open(of, encoding="utf-8") as f:
+            out = _json.load(f)
+        hi, mr = out["hi"][0], out["mr"][0]
+    except Exception:
+        return "FAIL", f"{eng}: produced no usable output"
+    # Hindi and Marathi must come back DIFFERENT. Identical output means the
+    # engine ignored the target and the user would get one language for both.
+    if hi == mr:
+        return "WARN", f"{eng}: Hindi and Marathi came back identical"
+    return "PASS", f"{eng}: en->hi and en->mr both produced, and they differ"
+
+
 def c_memory():
     import garden
     hw = garden.hardware()
@@ -207,6 +258,7 @@ def main():
     check("FFmpeg", c_ffmpeg)
     check("Speech-to-text models", c_asr_models)
     check("Translation engines", c_mt)
+    check("Translation actually runs", c_mt_runs)
     check("Voiceover voices", c_voices)
     check("Chat LLM backend", c_llm)
     check("Chat LLM actually answers", c_llm_answer)

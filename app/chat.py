@@ -134,8 +134,24 @@ def _tok(s: str) -> list[str]:
     return re.findall(r"\w+", s.lower(), flags=re.UNICODE)
 
 
+# How far the best segment must stand above the average one before its lines are
+# worth calling "most relevant". A bare score of zero is not the right test:
+# Hindi and Marathi questions carry में / है / आहे, which occur in every segment, so
+# EVERY segment scores and the best one stands barely above the crowd. Measured
+# on this project's media, "यह वीडियो किस बारे में है?" scored best 12.3 against a
+# mean of 8.1 -- a contrast of 1.5, which is noise -- while the same question in
+# English scored 4.4 against 0.54, a contrast of 8.1. Below this the lines are
+# not evidence of anything and must not be shown as though they were.
+MIN_CONTRAST = 3.0
+
+
 def _retrieve(m: dict, q: str, k: int = 5) -> tuple[list[dict], float]:
-    """Return (chronological hits, best_score). best_score == 0 means NO keyword match."""
+    """Return (chronological hits, contrast).
+
+    `contrast` is the best score divided by the mean score, not the raw best.
+    A raw score says how well a segment matched; the ratio says whether that
+    match means anything, which is the question the caller is actually asking.
+    """
     from rank_bm25 import BM25Okapi
     vid = m["id"]
     if vid not in _bm25_cache:
@@ -146,13 +162,13 @@ def _retrieve(m: dict, q: str, k: int = 5) -> tuple[list[dict], float]:
     bm25, segs = _bm25_cache[vid]
     scores = bm25.get_scores(_tok(q))
     order = sorted(range(len(segs)), key=lambda i: scores[i], reverse=True)[:k]
-    best = float(scores[order[0]]) if order else 0.0
-    hits = [i for i in order if scores[i] > 0]
-    if not hits:
-        # No lexical match. Return the head of the video as *context only* — the caller
-        # must not present these as citations for a specific factual question.
-        hits = order
-    return [segs[i] for i in sorted(hits)], best
+    if not order:
+        return [], 0.0
+    best = float(scores[order[0]])
+    mean = float(sum(scores)) / len(scores) if len(scores) else 0.0
+    contrast = (best / mean) if mean > 0 else (float("inf") if best > 0 else 0.0)
+    hits = [i for i in order if scores[i] > 0] or order
+    return [segs[i] for i in sorted(hits)], contrast
 
 
 def _describe(e: Exception) -> str:
@@ -325,10 +341,20 @@ def _fmt_segs(ss, prefer: str = "en") -> str:
     silently saw only a fragment - which made it answer NOT_IN_TRANSCRIPT even for
     "what is this video about?".
     """
+    try:
+        from glossary import correct_target
+    except Exception:
+        def correct_target(t, _lang):
+            return t
     out = []
     for h in ss:
         txt = (h.get("t") or {}).get(prefer) or h["text"]
-        out.append(f"[{int(h['start'])//60}:{int(h['start']) % 60:02d}] {txt}")
+        # Apply the glossary to what the model READS, not only to what it writes.
+        # Correcting the answer afterwards cannot help when the mistake is in the
+        # evidence: with "sheep" in the transcript the model reasons about sheep
+        # and says so, and no amount of output correction makes that right.
+        out.append(f"[{int(h['start'])//60}:{int(h['start']) % 60:02d}] "
+                   + correct_target(txt, prefer))
     return "\n".join(out)
 
 
@@ -338,26 +364,39 @@ def answer(m: dict, q: str, lang: str = "hi", history: list | None = None) -> di
     src_name = LANG_FULL.get(m.get("src_lang", "hi"), "the source language")
     total_words = sum(len(s["text"].split()) for s in segs)
 
-    key, best = _retrieve(m, q, k=6)
-    mode = os.environ.get("AWAZ_RETRIEVAL", "foreground")
-    limit = int(os.environ.get("AWAZ_CTX_SEGMENTS", "180"))
-    whole = _fmt_segs(segs[:limit])
-    if mode == "retrieval" and best > 0:
-        ctx = _fmt_segs(key)
-    elif best > 0:
-        ctx = ("MOST RELEVANT LINES:\n" + _fmt_segs(key)
-               + "\n\nFULL TRANSCRIPT:\n" + whole)
-    else:
-        # No keyword hit -> almost always a general question ("what is this about?").
-        # Summarising needs the whole transcript; the old head-only fallback made the
-        # model answer NOT_IN_TRANSCRIPT for the most common question of all.
-        ctx = "FULL TRANSCRIPT:\n" + whole
-
     # Reason in English (the small model's strongest language), then translate out.
     # Routed by the script the question is WRITTEN in, not by the language chosen
     # for answers: someone running the app in Hindi still types English questions
     # half the time, and feeding English to an hi->en engine mangled them.
     q_en = _question_to_en(q, lang, m.get("src_lang", "hi"))
+
+    # Retrieve with the ENGLISH question, not the one that was typed. The index
+    # holds every language of every segment, so either finds material -- but an
+    # Indic question drags its function words along, they match every segment,
+    # and the real hits end up buried under noise. Measured on this media, the
+    # same question retrieved at a contrast of 8.1 in English and 1.5 in Hindi,
+    # and the Hindi path then refused questions the English path answered.
+    key, contrast = _retrieve(m, q_en or q, k=6)
+    matched = contrast >= MIN_CONTRAST
+    # One line per question, on stderr. Enough to tell afterwards WHY an answer
+    # came out as it did: what the question became, how well it matched, and
+    # which branch of the context builder ran. Without it the only way to
+    # diagnose a bad answer is to reproduce it by hand.
+    _log(f"q={q[:40]!r} -> {q_en[:40]!r} lang={lang} "
+         f"contrast={contrast:.1f} matched={matched}")
+    mode = os.environ.get("AWAZ_RETRIEVAL", "foreground")
+    limit = int(os.environ.get("AWAZ_CTX_SEGMENTS", "180"))
+    whole = _fmt_segs(segs[:limit])
+    if mode == "retrieval" and matched:
+        ctx = _fmt_segs(key)
+    elif matched:
+        ctx = ("MOST RELEVANT LINES:\n" + _fmt_segs(key)
+               + "\n\nFULL TRANSCRIPT:\n" + whole)
+    else:
+        # Nothing stood out -> almost always a general question ("what is this
+        # about?"). Summarising needs the whole transcript, and labelling six
+        # arbitrary lines "most relevant" actively misleads the model.
+        ctx = "FULL TRANSCRIPT:\n" + whole
 
     try:
         from glossary import terms_table
@@ -409,8 +448,10 @@ def answer(m: dict, q: str, lang: str = "hi", history: list | None = None) -> di
                 "sources": [], "grounded": False, "error": err}
 
     if SENTINEL in ans_en.upper() or not ans_en.strip():
+        _log(f"model declined: sentinel={SENTINEL in ans_en.upper()} "
+             f"empty={not ans_en.strip()} len={len(ans_en)}")
         grounded = False
-        near, _ = _retrieve(m, q, k=3)
+        near, _ = _retrieve(m, q_en or q, k=3)
         return {"answer": STR_NOT_COVERED.get(lang, STR_NOT_COVERED["en"]),
                 "sources": [{"start": h["start"], "text": h["text"]} for h in near],
                 "grounded": False}
@@ -433,8 +474,8 @@ def answer(m: dict, q: str, lang: str = "hi", history: list | None = None) -> di
         ans = ans + "\n\n" + STR_LOW_ASR.get(lang, STR_LOW_ASR["en"])
 
     # Citations only when retrieval actually matched; otherwise the chips are noise.
-    if best > 0:
-        src, _ = _retrieve(m, q, k=3)
+    if matched:
+        src, _ = _retrieve(m, q_en or q, k=3)
         sources = [{"start": h["start"], "text": h["text"]} for h in src]
     else:
         sources = []

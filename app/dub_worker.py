@@ -114,6 +114,22 @@ def _resample(wav: np.ndarray, new_len: int) -> np.ndarray:
     return np.interp(x_new, x_old, wav).astype(np.float32)
 
 
+def text_digest(segs, lang: str) -> str:
+    """A fingerprint of exactly the text a voiceover was built from.
+
+    Modification times cannot answer "is this voiceover current?": one manifest
+    holds four languages, so correcting a single English line makes the file
+    newer than all four .wav files and every one of them looks stale. A digest
+    of the text that was actually spoken answers it exactly, and costs a
+    32-byte file per track.
+    """
+    import hashlib
+    h = hashlib.sha256()
+    for s in segs:
+        h.update(((s.get("t", {}).get(lang) or s["text"]) + "\x00").encode("utf-8"))
+    return h.hexdigest()[:16]
+
+
 def main():
     manifest_path, lang, out_wav = sys.argv[1], sys.argv[2], sys.argv[3]
     m = json.load(open(manifest_path, encoding="utf-8"))
@@ -152,6 +168,13 @@ def main():
     peak = float(np.max(np.abs(track))) or 1.0
     track = (track / peak * 0.95).astype(np.float32)
     sf.write(out_wav, track, sr)
+    # Record the text this track was built from, so a later run can tell whether
+    # it is still current without re-synthesising it to find out.
+    try:
+        with open(out_wav + ".txt", "w", encoding="utf-8") as f:
+            f.write(text_digest(segs, lang))
+    except Exception:
+        pass
     print(f"wrote {out_wav}  segs={done}  dur={len(track)/sr:.1f}s  sr={sr}")
 
 

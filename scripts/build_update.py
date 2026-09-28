@@ -22,6 +22,17 @@ DIST = os.path.join(REPO, "dist")
 OUT = os.path.join(DIST, "awazsetu-update.zip")
 
 TREES = ("app", "scripts", "docs")
+
+# Runtime packages this release ADDS. Normally the update pack carries no
+# runtime at all -- that is the whole point of it being a quarter of a megabyte.
+# This release is the exception: IndicTrans2 could not run in the packaged
+# interpreter because IndicTransToolkit and its dependencies were never
+# installed there, so every packaged copy fell back to NLLB. Shipping the app
+# fix without these would leave that untouched. Roughly 20 MB compressed, which
+# is still four hundred times smaller than re-downloading the package.
+RUNTIME_ADDS = ("IndicTransToolkit", "indicnlp", "sacremoses", "joblib",
+                "morfessor", "pandas", "pytz", "dateutil")
+RUNTIME_SITE = os.path.join("runtime", "python", "Lib", "site-packages")
 # Files the operator owns. Shipping them would silently reset a machine that has
 # been configured -- model choices, target languages, interface language, and
 # the glossary the handover calls "the one file you will actually edit". They go
@@ -67,6 +78,17 @@ copies. Any setting this release adds takes its default automatically.
 
 WHAT CHANGED
 ------------
+
+  IndicTrans2 now actually runs. This is the big one. The packaged copy of
+  Python was missing the library that loads IndicTrans2, so every installed
+  copy has been quietly falling back to NLLB - which is the engine the
+  documentation warns mistranslates agricultural terms. Nothing reported it,
+  because the fallback works, just worse. This pack installs the missing
+  library, which is why it is about twenty megabytes rather than one.
+
+  Existing subtitles and voiceovers are unaffected: they were produced with
+  IndicTrans2 already. What changes is everything produced from now on - new
+  uploads, and the translation of chat answers.
 
   The whole application is now in four languages, not just the subtitles.
   Every button, label and message exists in Hindi, Marathi, English and Odia,
@@ -115,6 +137,23 @@ def main() -> None:
         p = os.path.join(REPO, n)
         if os.path.exists(p):
             files.append((p, n))
+
+    for pkg in RUNTIME_ADDS:
+        base = os.path.join(REPO, RUNTIME_SITE, pkg)
+        if not os.path.isdir(base):
+            print(f"  !! {pkg} missing from the runtime; IndicTrans2 will not run")
+            continue
+        for root, dirs, names in os.walk(base):
+            dirs[:] = [d for d in dirs if d not in SKIP_DIRS]
+            for n in names:
+                if n.endswith(".pyc"):
+                    continue
+                q = os.path.join(root, n)
+                files.append((q, os.path.relpath(q, REPO)))
+    # six is a single module, not a package
+    six = os.path.join(REPO, RUNTIME_SITE, "six.py")
+    if os.path.exists(six):
+        files.append((six, os.path.relpath(six, REPO)))
 
     os.makedirs(DIST, exist_ok=True)
     with zipfile.ZipFile(OUT, "w", zipfile.ZIP_DEFLATED, compresslevel=9) as z:

@@ -25,3 +25,18 @@ psutil==5.9.0
 # Chat + voice LLM, in-process. Replaces the Ollama install entirely: it loads the
 # same GGUF weights the Ollama blobs already contain.
 llama-cpp-python==0.3.35
+
+# IndicTrans2's preprocessing toolkit and its dependency chain. Absent from the
+# embedded runtime until now, which made the DEFAULT translation engine fail to
+# load in every packaged copy and fall back to NLLB without saying so.
+# IndicTransToolkit ships a CPython 3.10 win_amd64 extension, so it must match
+# the bundled interpreter exactly.
+IndicTransToolkit==1.0.3
+indic-nlp-library-ITT==0.1.1
+sacremoses==0.1.1
+joblib==1.4.2
+Morfessor==2.0.6
+pandas==2.2.0
+pytz==2026.4
+python-dateutil==2.9.0.post0
+six==1.17.0
