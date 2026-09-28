@@ -293,10 +293,25 @@ def ensure_cert() -> tuple[str, str, str]:
 
 # ------------------------------------------------------------------ packaging
 def pack(stage: str, out: str) -> None:
+    """Pack, falling back to storing uncompressed when the payload is too big.
+
+    makeappx compresses in memory against a limit it derives from installed RAM
+    (it prints the figure it chose). A 16 GB payload exceeds it and the build
+    dies with 0x8007000e, which reads like a broken machine and is not one.
+    `/nc` skips compression: the package grows by the compressible fraction,
+    which for a tree that is mostly quantised model weights is small, and it
+    packs. Tried only after the normal path fails, so the smaller package is
+    still preferred wherever it is achievable.
+    """
     makeappx = sdk_tool("makeappx")
     if os.path.exists(out):
         os.remove(out)
     code, txt = run([makeappx, "pack", "/d", stage, "/p", out, "/o"])
+    if code != 0 and "0x8007000e" in txt:
+        log("  compression ran out of memory at this size; packing uncompressed")
+        if os.path.exists(out):
+            os.remove(out)
+        code, txt = run([makeappx, "pack", "/d", stage, "/p", out, "/o", "/nc"])
     if code != 0 or not os.path.exists(out):
         raise SystemExit("makeappx failed:\n" + txt[-4000:])
     log(f"  packed {os.path.getsize(out)/1e9:.2f} GB -> {os.path.basename(out)}")

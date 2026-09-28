@@ -231,3 +231,72 @@ def suite_script(ms):
               (in_target_script("ଛେଳି ଘର ବିଷୟରେ।", "or"), True)]
     T.rec("script", "guard", "-", all(got == want for got, want in checks),
           f"{sum(1 for g, w in checks if g == w)}/{len(checks)} correct")
+
+
+def suite_langid(ms):
+    """Hindi must be distinguishable from Marathi, or the guard is decorative."""
+    T = _t()
+    print("\n== langid ==")
+    sys.path.insert(0, os.path.join(REPO, "app"))
+    import langid
+    from chat import is_target_language
+
+    # hand-written pairs first: unambiguous, and independent of the corpus
+    pairs = [
+        ("इस वीडियो में बकरी पालन की जानकारी दी गई है।", "hi"),
+        ("या व्हिडिओमध्ये शेळीपालनाची माहिती दिली आहे.", "mr"),
+        ("बाड़े का आकार दस वर्ग फुट होना चाहिए।", "hi"),
+        ("गोठ्याचा आकार दहा चौरस फूट असावा.", "mr"),
+        ("यह नस्ल दूध के लिए अच्छी है और वजन भी बढ़ता है।", "hi"),
+        ("ही जात दुधासाठी चांगली आहे आणि वजनही वाढते.", "mr"),
+    ]
+    wrong = [(t[:30], want, langid.devanagari_lang(t))
+             for t, want in pairs if langid.devanagari_lang(t) != want]
+    T.rec("langid", "hand-pairs", "-", not wrong,
+          f"{len(pairs)-len(wrong)}/{len(pairs)} identified"
+          + (f", wrong: {wrong}" if wrong else ""))
+
+    # then the project's own corpus: every segment exists in BOTH languages, so
+    # it is 900+ labelled sentences of the exact text this has to judge
+    b = langid.benchmark()
+    T.rec("langid", "corpus-accuracy", "-", b["accuracy"] >= 0.85,
+          f"{b['correct']}/{b['total']} correct, {b['unsure']} unsure, "
+          f"{b['wrong']} wrong ({b['accuracy']:.1%})")
+
+    # the two rates that actually matter in production
+    keep = caught = 0
+    import json as _json
+    base = os.path.join(REPO, "app", "data", "work")
+    n = 0
+    for d in sorted(os.listdir(base)):
+        mp = os.path.join(base, d, "manifest.json")
+        if not os.path.exists(mp):
+            continue
+        with open(mp, encoding="utf-8") as f:
+            man = _json.load(f)
+        for seg in man["segments"]:
+            tr = seg.get("t") or {}
+            for lang, other in (("hi", "mr"), ("mr", "hi")):
+                if not tr.get(lang):
+                    continue
+                n += 1
+                if is_target_language(tr[lang], lang):
+                    keep += 1
+                if not is_target_language(tr[lang], other):
+                    caught += 1
+    T.rec("langid", "keeps-correct-answers", "-", n and keep / n >= 0.97,
+          f"{keep}/{n} correct answers accepted ({keep/n:.1%}) "
+          f"-- a false rejection costs the user their answer")
+    T.rec("langid", "catches-wrong-language", "-", n and caught / n >= 0.85,
+          f"{caught}/{n} wrong-language answers caught ({caught/n:.1%}) "
+          f"-- this is the reported bug")
+
+    # and the end-to-end predicate must not be fooled by script alone
+    hi = "इस वीडियो में बकरी पालन की जानकारी दी गई है।"
+    mr = "या व्हिडिओमध्ये शेळीपालनाची माहिती दिली आहे."
+    checks = [(is_target_language(hi, "hi"), True), (is_target_language(hi, "mr"), False),
+              (is_target_language(mr, "mr"), True), (is_target_language(mr, "hi"), False),
+              (is_target_language("Goat housing needs space.", "hi"), False)]
+    T.rec("langid", "guard", "-", all(g == w for g, w in checks),
+          f"{sum(1 for g, w in checks if g == w)}/{len(checks)} correct "
+          f"-- Marathi must NOT pass as Hindi")

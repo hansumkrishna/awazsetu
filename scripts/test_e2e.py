@@ -217,12 +217,14 @@ def suite_settings(ms):
 
 
 from test_suites_platform import suite_platform, suite_media   # noqa: E402
-from test_suites_i18n import suite_i18n, suite_paths, suite_script   # noqa: E402
+from test_suites_i18n import (suite_i18n, suite_paths, suite_script,   # noqa: E402
+                              suite_langid)
 
 SUITES = {"assets": suite_assets, "chat": suite_chat, "refusal": suite_refusal,
           "dub": suite_dub, "voice": suite_voice, "settings": suite_settings,
           "platform": suite_platform, "media": suite_media,
-          "i18n": suite_i18n, "paths": suite_paths, "script": suite_script}
+          "i18n": suite_i18n, "paths": suite_paths, "script": suite_script,
+          "langid": suite_langid}
 
 
 def write_report():

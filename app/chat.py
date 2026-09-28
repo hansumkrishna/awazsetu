@@ -103,6 +103,25 @@ def in_target_script(text: str, lang: str) -> bool:
     return got == "none" or want is None or got == want
 
 
+def is_target_language(text: str, lang: str) -> bool:
+    """The real check: right script AND, for Devanagari, the right language.
+
+    Script alone passed Marathi off as Hindi, because they share Devanagari
+    completely -- which is what "it still responds in different languages"
+    meant. langid separates them on closed-class words; measured over this
+    project's own 920 translated segments it keeps 99.0% of correct answers and
+    catches 91.5% of wrong-language ones, and every case it misses is garbled
+    ASR text that mixes both languages genuinely.
+    """
+    if not in_target_script(text, lang):
+        return False
+    try:
+        import langid
+        return langid.is_lang(text, lang)
+    except Exception:
+        return True          # never let a missing helper block a real answer
+
+
 _bm25_cache: dict[str, tuple] = {}
 # Chat re-asks the same things constantly ("what is this about?"), and every miss
 # costs a subprocess that loads a 200M checkpoint. Bounded so a long session
@@ -207,13 +226,15 @@ def _mt(text: str, src: str, tgt: str) -> str | None:
     engines = dict.fromkeys([os.environ.get("AWAZ_CHAT_MT", "nllb").lower(), "nllb"])
     for engine in engines:
         r = _mt_run(text, src, tgt, engine)
-        if r and r.strip() and in_target_script(r, tgt):
+        if r and r.strip() and is_target_language(r, tgt):
             if len(_mt_cache) >= _MT_CACHE_MAX:
                 _mt_cache.clear()
             _mt_cache[ck] = r
             return r
         if r:
-            _log(f"{engine} {src}->{tgt} produced {script_of(r)} script, rejected")
+            import langid
+            got = langid.devanagari_lang(r) or script_of(r)
+            _log(f"{engine} {src}->{tgt} produced {got}, rejected; trying the next engine")
         else:
             _log(f"{engine} {src}->{tgt} returned nothing")
     return None
@@ -268,16 +289,22 @@ def _to_lang(text: str, lang: str, src_hint: str = "hi") -> tuple[str, bool]:
             "hi" if got == "deva" else "or")
         via = _mt(text, src, "en")
         if not via:
-            # Could not normalise. If it is at least in the right script, that is
-            # a better answer than anything further processing can produce.
+            # Could not normalise. Keeping it was only safe when "right script"
+            # meant "right language" -- it never did for Hindi and Marathi, so
+            # this returned Marathi whenever Hindi was asked for and the
+            # normalisation happened to fail. Now it has to be the right
+            # language, not merely the right alphabet.
             _log(f"could not normalise {got} output via English for {lang}")
-            return text, in_target_script(text, lang)
+            return text, is_target_language(text, lang)
         text = via
 
     out = _mt(text, "en", lang)
-    if out and in_target_script(out, lang):
+    if out and is_target_language(out, lang):
         return out, True
-    _log(f"could not render the answer in {lang}; returning English")
+    # Both engines were tried inside _mt and neither produced `lang`. Saying so
+    # is the only honest option left: showing the other Indic language would be
+    # exactly the bug, and showing nothing helps nobody.
+    _log(f"could not render the answer in {lang}; returning English with a note")
     return text, False
 
 

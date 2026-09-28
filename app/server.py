@@ -313,10 +313,14 @@ def voice_chat(vid: str):
     # and on Hindi answers containing technical terms.
     tts_lang = lang
     try:
-        from chat import in_target_script, script_of
-        if ans and not in_target_script(ans, lang):
-            tts_lang = {"latin": "en", "deva": "hi", "orya": "or"}.get(
-                script_of(ans), "en")
+        from chat import is_target_language, script_of
+        import langid
+        if ans and not is_target_language(ans, lang):
+            # Marathi read aloud by the Hindi voice is not merely accented, it
+            # is wrong, so the voice follows the language actually produced
+            # rather than the one that was requested.
+            tts_lang = (langid.devanagari_lang(ans)
+                        or {"latin": "en", "orya": "or"}.get(script_of(ans), "en"))
     except Exception:
         pass
     audio_url = None
