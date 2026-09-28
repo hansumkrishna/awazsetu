@@ -39,7 +39,14 @@ WHICH DOWNLOAD DO I WANT?
                             with a git clone of the source. Ignore this unless
                             you intend to change the code.
 
-Pick ONE. They are alternatives, not a sequence.
+  4-installer/              A Windows MSIX installer, for when this needs a
+                            Start Menu entry and a proper uninstall rather than
+                            a folder. It asks for administrator rights ONCE, to
+                            trust its signing certificate - Windows will not
+                            install any MSIX otherwise. If that is a problem,
+                            use 1-run-it-here, which asks for nothing.
+
+Pick ONE of the first three. They are alternatives, not a sequence.
 
 
 HOW TO RUN IT
@@ -60,6 +67,13 @@ HOW TO RUN IT
   5. Double-click  AwazSetu.bat
      A browser opens at http://127.0.0.1:5000.
 
+  6. Pick your language.
+     The first thing on screen is English / Hindi / Marathi / Odia. Whichever
+     you choose, the whole application uses it - buttons, labels, messages, and
+     the language the assistant answers and speaks in. It asks again each time
+     you come back to the home page, because these laptops get shared. Turn
+     that off in Settings if yours does not.
+
   That is the whole procedure.
 
 
@@ -74,6 +88,7 @@ WHAT YOU CAN DO
   * Tap the microphone and ask out loud. You hear the answer spoken back.
   * Drop in your own video or audio file and it processes on the machine.
   * Open the Model Garden to see which model suits your hardware and language.
+  * Run the whole application in Hindi, Marathi, English or Odia.
 
 Everything you see is already computed, so playback is instant. Only the
 assistant runs live.
@@ -131,6 +146,12 @@ GROUPS = {
                          "awazsetu-assets.zip.parts.txt"),
 }
 
+# The MSIX installers and the two scripts that install and remove them. Copied
+# rather than hard-linked: they are small, and installer/ is a source folder
+# that gets rebuilt, so a link would silently change what is already staged.
+INSTALLER_FILES = ("AwazSetu-lite.msix", "AwazSetu-full.msix", "AwazSetu.cer",
+                   "Install.ps1", "Uninstall.ps1", "README.md")
+
 
 def place(src, dst):
     """Hard-link when possible (free), copy when not."""
@@ -171,6 +192,19 @@ def main():
             if os.path.exists(p):
                 place(p, os.path.join(d, extra))
         print(f"  {folder:20} {n} part(s)")
+
+    src = os.path.join(REPO, "installer")
+    if os.path.isdir(src):
+        d = os.path.join(OUT, "4-installer")
+        os.makedirs(d, exist_ok=True)
+        n = 0
+        for name in INSTALLER_FILES:
+            sp = os.path.join(src, name)
+            if os.path.exists(sp):
+                place(sp, os.path.join(d, name))
+                total += os.path.getsize(sp)
+                n += 1
+        print(f"  {'4-installer':20} {n} file(s)")
 
     print(f"\nstaged -> {OUT}")
     print(f"upload size: {total/1e9:.2f} GB (hard-linked, so no extra disk used)")
