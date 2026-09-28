@@ -22,6 +22,15 @@ DIST = os.path.join(REPO, "dist")
 OUT = os.path.join(DIST, "awazsetu-update.zip")
 
 TREES = ("app", "scripts", "docs")
+# Files the operator owns. Shipping them would silently reset a machine that has
+# been configured -- model choices, target languages, interface language, and
+# the glossary the handover calls "the one file you will actually edit". They go
+# into updated-defaults/ instead, so a curious operator can diff them and nobody
+# loses work by extracting an archive. config.load() merges DEFAULTS over
+# whatever settings.json holds, so a file written before this release still
+# picks up every new key without being replaced.
+OPERATOR_OWNED = {os.path.join("app", "settings.json"),
+                  os.path.join("app", "glossary.json")}
 LOOSE = ("README.md", "AwazSetu.bat", "AwazSetu-Check.bat", "requirements-pinned.txt")
 # `data` is excluded here BY NAME rather than by path, unlike in package.py,
 # because this pack copies only the three source trees above -- there is no
@@ -46,8 +55,14 @@ TO APPLY
   3. Double-click AwazSetu-Check.bat  ->  READY
   4. Double-click AwazSetu.bat
 
-Your processed videos, uploads and settings are untouched. They live in
-app\\data\\, and this pack does not contain that folder.
+Your processed videos and uploads are untouched: they live in app\\data\\, and
+this pack does not contain that folder.
+
+Your settings are untouched too. app\\settings.json and app\\glossary.json are
+deliberately NOT in this pack, because they are yours - your model choices,
+your language list, your terminology. The current defaults are included under
+updated-defaults\\ if you want to compare them, but nothing overwrites your
+copies. Any setting this release adds takes its default automatically.
 
 
 WHAT CHANGED
@@ -92,7 +107,10 @@ def main() -> None:
                 if n.endswith(".pyc"):
                     continue
                 p = os.path.join(root, n)
-                files.append((p, os.path.relpath(p, REPO)))
+                rel = os.path.relpath(p, REPO)
+                if rel in OPERATOR_OWNED:
+                    continue
+                files.append((p, rel))
     for n in LOOSE:
         p = os.path.join(REPO, n)
         if os.path.exists(p):
@@ -103,6 +121,10 @@ def main() -> None:
         z.writestr("APPLY_THIS_UPDATE.txt", READ_ME)
         for src, arc in sorted(files, key=lambda x: x[1]):
             z.write(src, arc)
+        for rel in sorted(OPERATOR_OWNED):
+            q = os.path.join(REPO, rel)
+            if os.path.exists(q):
+                z.write(q, "updated-defaults/" + os.path.basename(rel))
 
     print(f"{OUT}")
     print(f"  {len(files)} files, {os.path.getsize(OUT)/1e6:.2f} MB")
