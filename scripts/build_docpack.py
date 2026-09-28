@@ -198,6 +198,13 @@ any kind. Its central design decision is that <b>everything a viewer consumes is
 ingest, behind a progress bar</b>: the transcript, all four subtitle tracks and all four
 full-length voiceovers are written to disk before the item appears in the library. Playback
 therefore loads no model at all.</p>
+
+<p>The second decision follows from who uses it. <b>The application itself is in all four
+languages</b>, not only the content it produces: every button, label, progress message and error
+is translated, and the home page asks which language before anything else happens. It asks again
+on each return to the library, because a field laptop is shared and the next person should not
+inherit the last person's choice. A tool that translates Marathi into Odia but insists on being
+driven in English has only moved the barrier.</p>
 <p>The only models that run while a user is present are those serving the chat and voice
 assistant. That is what makes behaviour predictable on modest hardware — switching subtitle
 language or playing an Odia voiceover is a file read, not an inference.</p>
@@ -359,7 +366,9 @@ with low literacy — the primary audience.</td></tr>
 <tr><td>Retrieval</td><td>rank-bm25</td><td>Pure Python. No vector store, no embedding model, no index to rebuild.</td></tr>
 <tr><td>Media</td><td>FFmpeg 7.1 (bundled binary)</td><td>Resolved from the package, never from PATH.</td></tr>
 <tr><td>Data</td><td>JSON manifests + WebVTT + WAV on disk</td><td>No database. Every artefact is inspectable and diffable.</td></tr>
-<tr><td>Tooling</td><td>Git, a pinned wheel set, generated documentation</td><td>This pack is produced by a script from live data.</td></tr>
+<tr><td>Interface&nbsp;languages</td><td>One catalogue in <code>app/i18n.py</code></td><td>Hindi, Marathi, English and Odia, served to both the server templates and the browser, so a status message cannot stay English on a translated page.</td></tr>
+<tr><td>Packaging</td><td>Zero-install <code>.zip</code>, and a signed MSIX</td><td>The zip needs no rights at all; the MSIX gives a Start Menu entry and Intune deployment at the cost of one trust decision.</td></tr>
+<tr><td>Tooling</td><td>Git, a pinned wheel set</td><td>No build step anywhere: no Node, no bundler, no compiler on the target.</td></tr>
 </table>
 <p class="small"><b>Data / messaging / cloud:</b> none, by design. There is no broker, queue,
 container runtime or cloud dependency. Concurrency is process-level; the work queue is the filesystem.</p>
@@ -555,6 +564,11 @@ suite asserted.</p>
 <p><b>None.</b> A Windows 10/11 x64 machine and free disk space. No Python, no FFmpeg, no Ollama, no
 runtime, no administrator rights and no network — the package contains its own interpreter and every
 binary it calls.</p>
+<p class="small">The one exception is the optional MSIX installer, which needs a single
+administrator prompt. That is not a limitation of this application: Windows refuses to install any
+MSIX whose signing certificate it does not trust, and a hackathon team cannot be issued a
+commercial code-signing certificate. The <code>.zip</code> route above needs nothing, and remains
+the supported path for a locked-down machine.</p>
 
 <h3>Packages</h3>
 <table>
@@ -566,6 +580,10 @@ voices, both assistant models, and the complete processed library</td>
 <tr><td><b>FULL</b></td><td class="n">{q(size_full,1) if size_full else 'see dist/'} GB</td>
 <td>LITE plus Whisper large-v3, tiny and base, the NLLB fallback engine, and a rescue kit of pinned
 wheels and a Python installer</td><td>USB hand-over and long-term custody</td></tr>
+<tr><td><b>MSIX</b></td><td class="n">same</td>
+<td>Either build above, wrapped as a signed Windows app package with a launcher, tile icons and
+install/uninstall scripts</td><td>When it must appear in the Start Menu, uninstall cleanly, or be
+deployed by IT through Intune</td></tr>
 </table>
 
 <h3>Where to get it</h3>
@@ -585,8 +603,16 @@ bad download is caught before it costs an evening.</p>
       is caught before the demo, not during it.</li>
   <li>Double-click <b><code>AwazSetu-Check.bat</code></b> and confirm it prints READY.</li>
   <li>Double-click <b><code>AwazSetu.bat</code></b>. A browser opens at <code>http://127.0.0.1:5000</code>.</li>
+  <li>Choose a language on the first screen — English, Hindi, Marathi or Odia. The whole
+      interface, and the language the assistant answers and speaks in, follow that choice.</li>
   <li>Turn Wi-Fi off. Nothing changes — which is the demonstration.</li>
 </ol>
+<p class="small">To install it as a Windows application instead, run
+<code>installer\Install.ps1</code>: it trusts the signing certificate (one administrator prompt),
+installs the package, and adds a Start Menu entry. <code>Uninstall.ps1</code> reverses both. On
+that route the install directory is read-only, so the shipped library is served where it lands and
+anything the user adds is written to <code>%LOCALAPPDATA%\AwazSetu</code> — which also means
+an upgrade cannot lose their work.</p>
 
 <h3>Configuration</h3>
 <p>The Model Garden detects the machine and recommends a preset; one click applies it. Individual
